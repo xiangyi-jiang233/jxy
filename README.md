@@ -1,6 +1,6 @@
 # Shirley 的技术知识库
 
-这是一个基于 GitHub Pages 的个人技术知识库，用于整理 RoboBus、ROS 2、Linux、自动驾驶运维与日常学习日志。
+这是一个基于 GitHub Pages 的个人技术知识库，只整理能够跨设备、跨项目复用的工程知识。
 
 ## 网站地址
 
@@ -8,17 +8,19 @@
 
 ## 当前内容
 
-- RoboBus 自驾维护终端操作流程
-- IPC / ORIN / ROS 状态检查要点
-- SSH 与 SCP 文件传输思路
+- ROS 2 与机器人数据工程手册（12 个通用主题）
+- ROS 2 节点、话题、TF2 与 rosbag
+- MCAP 检查、时间、切割与恢复
+- Python 命令行工具设计
+- Docker 文件流转与 Linux 软链接
+- DDS、RMW、CycloneDDS 与分层排障
+- 通信中间件性能分析方法
+- 远程开发环境识别
+- AI 编程助手的项目级配置方法
 - Linux 常用命令速查
-- ROS 2 与依赖拉取问题排查
-- 2026-07-14 至 07-19 周知识专题
-- Failcase 判定与 Lichtblick 回放
-- Docker、DDS、CycloneDDS 与 Tailscale
-- TF、TF 树、MCAP 与 rosbag
-- 数据切割、Issue 绑定与算法复现闭环
 
 ## 更新方式
 
-直接修改仓库中的 `index.html` 并提交到 `main` 分支。GitHub Actions 会自动重新发布网站。
+修改 `index.html` 或 `notes/` 中的文章并提交到 `main` 分支，GitHub Actions 会自动重新发布网站。
+
+本站不收录真实 IP、主机名、本机绝对路径、账号密钥、设备编号或内部流程；示例统一使用占位符。

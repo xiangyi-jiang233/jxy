@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="通用 ROS 2 与机器人数据工程手册：节点、话题、TF2、rosbag、MCAP、Python、Docker、CycloneDDS 与远程开发。">
+  <meta name="theme-color" content="#14281c">
+  <title>ROS 2 与机器人数据工程手册｜Shirley Knowledge</title>
+  <style>
+    :root{--bg:#f5f7f4;--surface:#fff;--surface-2:#edf1eb;--text:#172018;--muted:#657066;--line:#dce3db;--accent:#155f3b;--accent-2:#0d472b;--highlight:#d9f266;--danger:#a43b31;--code:#112019;--shadow:0 16px 44px rgba(24,43,31,.1);--radius:20px}
+    [data-theme="dark"]{--bg:#0e1410;--surface:#151d17;--surface-2:#1d2820;--text:#edf3ed;--muted:#a8b4aa;--line:#2c392f;--accent:#7fd5a5;--accent-2:#a9e5c1;--code:#09100c;--danger:#ff9c91;--shadow:0 18px 52px rgba(0,0,0,.26)}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;line-height:1.75}a{color:inherit;text-decoration:none}button{font:inherit;cursor:pointer}code,kbd{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}.shell{width:min(1180px,calc(100% - 40px));margin:auto}
+    .topbar{position:sticky;top:0;z-index:20;border-bottom:1px solid color-mix(in srgb,var(--line) 72%,transparent);background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(16px)}.nav{min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:16px}.brand{display:flex;align-items:center;gap:11px;font-weight:850}.brand-mark{display:grid;width:38px;height:38px;place-items:center;border-radius:12px;background:var(--text);color:var(--highlight);font:700 14px ui-monospace,monospace}.nav-actions{display:flex;align-items:center;gap:9px}.back{padding:9px 13px;border:1px solid var(--line);border-radius:11px;background:var(--surface);font-size:14px}.theme{width:40px;height:40px;border:1px solid var(--line);border-radius:11px;background:var(--surface);color:var(--text)}
+    .hero{margin:32px auto 24px;padding:clamp(34px,6vw,70px);border-radius:30px;background:#14281c;color:#f4f8f4;box-shadow:var(--shadow);overflow:hidden;position:relative}.hero:after{content:"";position:absolute;width:330px;height:330px;right:-95px;top:-130px;border:68px solid rgba(217,242,102,.13);border-radius:50%}.eyebrow{margin:0 0 14px;color:var(--highlight);font:750 13px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase}h1{position:relative;z-index:1;max-width:880px;margin:0;font-size:clamp(38px,6vw,68px);line-height:1.06;letter-spacing:-.05em}.hero p:last-child{max-width:760px;margin:20px 0 0;color:#bdcbbf;font-size:18px}
+    .principles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:30px}.principle{padding:18px;border:1px solid var(--line);border-radius:16px;background:var(--surface)}.principle strong{display:block;color:var(--accent-2);font-size:16px}.principle span{color:var(--muted);font-size:13px}.layout{display:grid;grid-template-columns:235px minmax(0,1fr);gap:34px;align-items:start}.toc{position:sticky;top:92px}.toc-title{margin:0 0 10px;color:var(--muted);font-size:12px;letter-spacing:.1em;text-transform:uppercase}.toc nav{display:grid;gap:4px}.toc a{padding:8px 11px;border-radius:10px;color:var(--muted);font-size:13px}.toc a:hover{background:var(--surface-2);color:var(--text)}
+    article section{scroll-margin-top:94px;margin-bottom:56px}h2{margin:0 0 8px;font-size:clamp(27px,4vw,39px);line-height:1.2;letter-spacing:-.04em}h3{margin:27px 0 10px;font-size:20px;letter-spacing:-.02em}p{margin:9px 0}.lead{margin:0 0 20px;color:var(--muted)}.panel{margin:18px 0;padding:22px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}.note{margin:18px 0;padding:16px 18px;border-left:4px solid var(--accent);border-radius:0 13px 13px 0;background:var(--surface-2)}.note strong{color:var(--accent-2)}.warning{border-left-color:var(--danger)}.warning strong{color:var(--danger)}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.mini{padding:18px;border:1px solid var(--line);border-radius:16px;background:var(--surface)}.mini h3{margin:0 0 6px;font-size:17px}.mini p{margin:0;color:var(--muted);font-size:14px}table{width:100%;border-collapse:separate;border-spacing:0;margin:16px 0;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--surface);font-size:14px}th,td{padding:13px 15px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{background:var(--surface-2);color:var(--accent-2)}tr:last-child td{border-bottom:0}
+    pre{position:relative;margin:15px 0;padding:18px;overflow:auto;border:1px solid #284132;border-radius:15px;background:var(--code);color:#d8eadc;line-height:1.6;font-size:13px}pre code{white-space:pre}p code,li code,td code{padding:2px 6px;border-radius:6px;background:var(--surface-2);color:var(--accent-2);font-size:.92em}ul,ol{padding-left:22px}li{margin:7px 0}.muted{color:var(--muted)}
+    .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;counter-reset:step}.flow div{position:relative;padding:18px 14px;border:1px solid var(--line);border-radius:16px;background:var(--surface);counter-increment:step}.flow div:before{content:"0" counter(step);display:block;margin-bottom:12px;color:var(--accent);font:800 13px ui-monospace,monospace}.flow div:not(:last-child):after{content:"→";position:absolute;right:-13px;top:50%;z-index:2;width:24px;height:24px;border:1px solid var(--line);border-radius:50%;background:var(--bg);color:var(--accent);text-align:center;line-height:21px}.flow strong{display:block}.flow small{color:var(--muted)}
+    .layers{display:grid;gap:9px}.layer{display:grid;grid-template-columns:125px 1fr;gap:18px;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}.layer strong{color:var(--accent-2)}.layer span{color:var(--muted);font-size:14px}.refs a{color:var(--accent-2);text-decoration:underline;text-underline-offset:3px}.refs li{margin:9px 0}footer{margin-top:40px;padding:30px 0 44px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}.foot{display:flex;justify-content:space-between;gap:18px}
+    @media(max-width:900px){.layout{grid-template-columns:1fr}.toc{position:static;overflow-x:auto}.toc-title{display:none}.toc nav{display:flex;min-width:max-content}.flow{grid-template-columns:1fr 1fr}.flow div:after{display:none}}
+    @media(max-width:560px){.shell{width:min(100% - 24px,1180px)}.hero{margin-top:18px;padding:30px 22px}.principles,.grid,.flow{grid-template-columns:1fr}.layer{grid-template-columns:1fr;gap:3px}table{display:block;overflow-x:auto}.back{display:none}.foot{flex-direction:column}}
+  </style>
+</head>
+<body>
+  <header class="topbar"><nav class="nav shell" aria-label="页面导航"><a class="brand" href="../index.html"><span class="brand-mark">SK</span><span>Shirley Knowledge</span></a><div class="nav-actions"><a class="back" href="../index.html">← 返回知识库</a><button class="theme" id="themeToggle" aria-label="切换深色模式">◐</button></div></nav></header>
+  <main class="shell">
+    <section class="hero" id="top"><p class="eyebrow">Evergreen guide · ROS 2 & robotics data</p><h1>ROS 2 与机器人数据工程手册</h1><p>只记录可迁移、可复用的通用知识：理解原理，掌握标准命令，建立分层排障方法。</p></section>
+    <div class="principles">
+      <div class="principle"><strong>通用占位符</strong><span>用 &lt;话题名&gt;、&lt;容器名&gt; 和 &lt;文件路径&gt; 替代本机信息。</span></div>
+      <div class="principle"><strong>先验证再修改</strong><span>每次操作前建立基线，修改后检查输出与数据完整性。</span></div>
+      <div class="principle"><strong>分层定位</strong><span>从应用、ROS 2、DDS、容器、网络到内核逐层判断。</span></div>
+    </div>
+
+    <div class="layout">
+      <aside class="toc"><p class="toc-title">手册目录</p><nav>
+        <a href="#ros-graph">01 · ROS 2 图与命令</a><a href="#tf2">02 · TF2</a><a href="#rosbag">03 · rosbag 与 MCAP</a><a href="#mcap-tools">04 · MCAP 工具</a><a href="#mcap-time">05 · 时间与切割</a><a href="#python-cli">06 · Python CLI</a><a href="#docker">07 · Docker 文件流转</a><a href="#links">08 · 路径与软链接</a><a href="#dds">09 · DDS 与 CycloneDDS</a><a href="#middleware">10 · 中间件性能</a><a href="#remote">11 · 远程开发</a><a href="#ai-config">12 · AI 项目配置</a><a href="#references">官方参考</a>
+      </nav></aside>
+
+      <article>
+        <section id="ros-graph">
+          <h2>01｜ROS 2 图与核心命令</h2>
+          <p class="lead">ROS 2 图是运行中节点及其通信关系的集合。排查系统时，先确认“谁在运行、谁在发布、谁在订阅”。</p>
+          <div class="grid">
+            <div class="mini"><h3>节点 Node</h3><p>承担单一、模块化职责的运行单元；一个进程可以包含一个或多个节点。</p></div>
+            <div class="mini"><h3>话题 Topic</h3><p>用于连续数据流的异步发布/订阅通道，可有多个发布者和订阅者。</p></div>
+            <div class="mini"><h3>服务 Service</h3><p>适合短时、同步的请求—响应操作。</p></div>
+            <div class="mini"><h3>动作 Action</h3><p>适合耗时任务，能够提供反馈并支持取消。</p></div>
+          </div>
+          <h3>从整体到局部的检查顺序</h3>
+          <pre><code>ros2 node list
+ros2 node info &lt;节点名&gt;
+ros2 topic list
+ros2 topic info &lt;话题名&gt;
+ros2 topic echo &lt;话题名&gt;
+ros2 topic hz &lt;话题名&gt;
+ros2 topic bw &lt;话题名&gt;</code></pre>
+          <table><thead><tr><th>命令</th><th>回答的问题</th></tr></thead><tbody>
+            <tr><td><code>node list</code></td><td>当前有哪些节点正在运行？</td></tr><tr><td><code>node info</code></td><td>该节点发布、订阅、提供或调用什么？</td></tr><tr><td><code>topic info</code></td><td>话题类型是什么？有几个发布者和订阅者？</td></tr><tr><td><code>topic echo</code></td><td>消息内容是否真实到达？</td></tr><tr><td><code>topic hz</code></td><td>当前订阅端实际观察到的消息频率是多少？</td></tr><tr><td><code>topic bw</code></td><td>当前订阅端实际观察到的带宽是多少？</td></tr>
+          </tbody></table>
+          <div class="note"><strong>注意：</strong><code>hz</code> 和 <code>bw</code> 是工具自身作为订阅者测得的结果，会受到设备性能、网络和 QoS 影响，不一定等于发布端理论值。</div>
+        </section>
+
+        <section id="tf2">
+          <h2>02｜TF2 与坐标变换</h2>
+          <p class="lead">TF2 维护“某个坐标系相对另一个坐标系的位置与姿态”，让来自不同传感器的数据能在统一空间中使用。</p>
+          <table><thead><tr><th>内容</th><th>含义</th></tr></thead><tbody>
+            <tr><td><code>/tf</code></td><td>持续变化的动态变换，例如车辆随时间移动。</td></tr><tr><td><code>/tf_static</code></td><td>发布后保持不变的静态变换，例如传感器安装位置。</td></tr><tr><td>父子关系</td><td>每条变换描述父坐标系与子坐标系之间的平移和旋转。</td></tr><tr><td>时间戳</td><td>变换必须与传感器数据时间匹配，否则可能出现 extrapolation 错误。</td></tr>
+          </tbody></table>
+          <pre><code>ros2 topic info /tf
+ros2 topic info /tf_static
+ros2 topic hz /tf
+ros2 run tf2_ros tf2_echo &lt;源坐标系&gt; &lt;目标坐标系&gt;
+ros2 run tf2_tools view_frames</code></pre>
+          <h3>排查 TF 的四个问题</h3>
+          <ol><li>两个坐标系是否都存在？</li><li>中间的父子链路是否完整？</li><li>变换时间是否覆盖传感器消息时间？</li><li>静态变换是否误发到了动态通道，或反之？</li></ol>
+        </section>
+
+        <section id="rosbag">
+          <h2>03｜rosbag 与 MCAP</h2>
+          <p class="lead">rosbag2 是 ROS 2 的录制与回放框架；MCAP 是它可以使用的一种存储格式。</p>
+          <div class="flow"><div><strong>选择话题</strong><small>只录制复现问题需要的数据</small></div><div><strong>开始录制</strong><small>指定 MCAP 存储格式和名称</small></div><div><strong>检查结果</strong><small>确认时长、话题和消息数量</small></div><div><strong>回放验证</strong><small>确认数据可读且时间正确</small></div></div>
+          <pre><code># 录制指定话题
+ros2 bag record -s mcap -o &lt;记录名称&gt; &lt;话题1&gt; &lt;话题2&gt;
+
+# 录制全部话题
+ros2 bag record -s mcap -o &lt;记录名称&gt; --all
+
+# 查看与回放
+ros2 bag info &lt;数据包路径&gt;
+ros2 bag play &lt;数据包路径&gt;
+ros2 bag play &lt;数据包路径&gt; --clock</code></pre>
+          <div class="note warning"><strong>占位符不是命令的一部分：</strong>不要把尖括号原样输入。例如把 <code>&lt;记录名称&gt;</code> 替换为 <code>test_bag</code>。Shell 会把尖括号理解为重定向符号。</div>
+          <p><code>--clock</code> 会在回放时发布仿真时钟。只有使用仿真时间的节点设置正确时，它们才会按该时钟运行。</p>
+        </section>
+
+        <section id="mcap-tools">
+          <h2>04｜MCAP 检查与处理工具</h2>
+          <p class="lead">MCAP CLI 用于检查、筛选、合并、排序、压缩和恢复 MCAP 文件。</p>
+          <table><thead><tr><th>工具</th><th>用途</th><th>是否生成新文件</th></tr></thead><tbody>
+            <tr><td><code>mcap info</code></td><td>查看消息数、时长、时间范围、话题和压缩信息。</td><td>否</td></tr><tr><td><code>mcap doctor</code></td><td>检查 MCAP 文件结构和索引是否正常。</td><td>否</td></tr><tr><td><code>mcap list</code></td><td>列出 channel、chunk、schema、metadata 等结构。</td><td>否</td></tr><tr><td><code>mcap filter</code></td><td>按时间或话题复制选定消息。</td><td>是</td></tr><tr><td><code>mcap merge</code></td><td>合并多个 MCAP 文件。</td><td>是</td></tr><tr><td><code>mcap sort</code></td><td>按时间重写并整理消息顺序。</td><td>是</td></tr><tr><td><code>mcap recover</code></td><td>尝试从截断或损坏文件中恢复可读记录并重建索引。</td><td>是</td></tr>
+          </tbody></table>
+          <pre><code>mcap --help
+mcap &lt;子命令&gt; --help
+mcap info &lt;输入.mcap&gt;
+mcap doctor &lt;输入.mcap&gt;
+mcap list chunks &lt;输入.mcap&gt;
+mcap recover &lt;损坏.mcap&gt; -o &lt;恢复.mcap&gt;</code></pre>
+          <div class="note"><strong>版本意识：</strong>不同版本的 MCAP CLI 参数可能变化。在修改文件前先运行对应子命令的 <code>--help</code>，不要只凭旧笔记猜参数。</div>
+        </section>
+
+        <section id="mcap-time">
+          <h2>05｜MCAP 时间与切割</h2>
+          <p class="lead">切割失败通常不是“文件坏了”，而是混淆了相对时间、Unix 时间戳、纳秒和时区。</p>
+          <table><thead><tr><th>时间形式</th><th>示例含义</th><th>特点</th></tr></thead><tbody>
+            <tr><td>相对秒</td><td>从录制开头算起的第 N 秒</td><td>直观，但不能直接与真实日期混用。</td></tr><tr><td>Unix 秒</td><td>从 1970-01-01 UTC 起累计的秒数</td><td>可能包含小数部分。</td></tr><tr><td>Unix 纳秒</td><td>Unix 时间乘以 10⁹</td><td>精度高，应使用整数避免浮点误差。</td></tr><tr><td>RFC3339</td><td>带日期、时间与时区偏移</td><td>适合人类阅读，必须注意 <code>Z</code> 与本地偏移。</td></tr>
+          </tbody></table>
+          <h3>切割的正确顺序</h3>
+          <div class="flow"><div><strong>读取范围</strong><small>确认原文件 start 与 end</small></div><div><strong>统一时基</strong><small>把事件时间换成同一时区/单位</small></div><div><strong>计算区间</strong><small>限制在原文件时间范围内</small></div><div><strong>验证输出</strong><small>检查消息数、时长和话题</small></div></div>
+          <pre><code># 显示格式只影响输出，不修改文件内时间
+mcap info --time-format=rfc3339 &lt;输入.mcap&gt;
+mcap info --time-format=nanoseconds &lt;输入.mcap&gt;
+
+# 参数名称以本机版本帮助为准
+mcap filter --help</code></pre>
+          <h3>输出为 0 条消息时检查</h3>
+          <ol><li>切割区间是否真正落在原文件 start 与 end 之间。</li><li>是否把本地时间误当成 UTC，或重复加减时区偏移。</li><li>是否把秒当成纳秒，或把纳秒当成秒。</li><li>筛选的话题是否存在，并且在该区间确实有消息。</li><li>输出后是否再次运行 <code>mcap info</code> 和 <code>mcap doctor</code>。</li></ol>
+        </section>
+
+        <section id="python-cli">
+          <h2>06｜可复用 Python 命令行工具</h2>
+          <p class="lead">把一次性脚本做成工具，关键不是代码变长，而是输入明确、校验完整、错误可理解、结果可验证。</p>
+          <table><thead><tr><th>模块</th><th>适合解决的问题</th></tr></thead><tbody>
+            <tr><td><code>argparse</code></td><td>定义位置参数、可选参数、默认值、帮助文本和互斥参数。</td></tr><tr><td><code>pathlib.Path</code></td><td>跨平台地组合、检查和遍历文件路径。</td></tr><tr><td><code>datetime / ZoneInfo</code></td><td>处理日期、时区与时间戳转换。</td></tr><tr><td><code>subprocess.run</code></td><td>调用外部 CLI，并检查返回码、标准输出和错误输出。</td></tr><tr><td><code>shutil</code></td><td>复制、移动文件和目录等高层文件操作。</td></tr><tr><td><code>re</code></td><td>从结构稳定的文本输出中提取字段。</td></tr>
+          </tbody></table>
+          <h3>推荐处理流程</h3>
+          <pre><code>解析参数
+  ↓
+检查输入与参数范围
+  ↓
+读取源数据元信息
+  ↓
+统一时间单位并计算区间
+  ↓
+执行切割或复制
+  ↓
+验证输出消息数与时间范围
+  ↓
+返回清晰的成功或错误信息</code></pre>
+          <div class="note"><strong>原始消息复制：</strong>如果目标只是按时间截取数据，通常不必解析图像、点云或自定义消息内容。复制序列化 payload 能降低依赖和类型兼容风险。</div>
+          <h3>接口设计原则</h3>
+          <ul><li>同一含义只提供一个明确入口，冲突参数使用互斥组。</li><li>危险覆盖必须显式使用 <code>--force</code> 或 <code>--overwrite</code>。</li><li>时间窗口、输入路径和输出路径都在执行前校验。</li><li>外部命令失败时保留返回码和关键错误信息。</li><li>输出为空也应被视为需要解释的结果，而不是静默成功。</li></ul>
+        </section>
+
+        <section id="docker">
+          <h2>07｜Docker 与文件流转</h2>
+          <p class="lead">宿主机和容器拥有不同文件系统视图。复制前必须明确源在哪一侧、目标在哪一侧。</p>
+          <pre><code>docker ps
+docker exec -it &lt;容器名&gt; bash
+
+# 宿主机 → 容器
+docker cp &lt;宿主机文件&gt; &lt;容器名&gt;:&lt;容器目录&gt;
+
+# 容器 → 宿主机
+docker cp &lt;容器名&gt;:&lt;容器文件&gt; &lt;宿主机目录&gt;</code></pre>
+          <table><thead><tr><th>方式</th><th>适用场景</th><th>特点</th></tr></thead><tbody>
+            <tr><td><code>docker cp</code></td><td>临时复制单个文件或目录。</td><td>容器运行或停止时均可使用；必须同时给出源和目标。</td></tr><tr><td>绑定挂载</td><td>需要长期共享、频繁读写的数据目录。</td><td>宿主机目录持续映射到容器。</td></tr><tr><td>容器内 <code>cp</code></td><td>文件已经在容器内部，只需换位置。</td><td>不能直接访问未挂载的宿主机路径。</td></tr>
+          </tbody></table>
+          <div class="note warning"><strong>常见错误：</strong>只写一个路径时，<code>docker cp</code> 无法判断要从哪里复制到哪里；目标父目录不存在时也可能失败。</div>
+        </section>
+
+        <section id="links">
+          <h2>08｜Linux 路径与软链接</h2>
+          <p class="lead">软链接类似“可重定向的快捷入口”，适合稳定入口指向不同版本或资源目录。</p>
+          <pre><code>pwd
+readlink &lt;链接路径&gt;
+readlink -f &lt;链接路径&gt;
+ln -s &lt;目标路径&gt; &lt;链接路径&gt;
+rm &lt;链接路径&gt;</code></pre>
+          <table><thead><tr><th>命令</th><th>作用</th></tr></thead><tbody>
+            <tr><td><code>readlink</code></td><td>显示软链接中直接保存的目标。</td></tr><tr><td><code>readlink -f</code></td><td>递归解析软链接和相对路径，输出最终绝对路径。</td></tr><tr><td><code>rm &lt;链接&gt;</code></td><td>删除链接本身，不删除链接指向的真实目录。</td></tr>
+          </tbody></table>
+          <div class="note warning"><strong>修改前检查：</strong>先用 <code>ls -l</code> 和 <code>readlink -f</code> 确认当前指向。创建同名新链接前，应明确旧路径是链接、普通文件还是目录。</div>
+        </section>
+
+        <section id="dds">
+          <h2>09｜DDS、RMW 与 CycloneDDS</h2>
+          <p class="lead">ROS 2 的通信问题需要分层判断，不能看到节点异常就直接归因于应用代码。</p>
+          <div class="layers"><div class="layer"><strong>ROS 2 应用</strong><span>节点、话题、消息类型、命名空间和 QoS。</span></div><div class="layer"><strong>RMW</strong><span>ROS 2 与具体中间件实现之间的抽象接口。</span></div><div class="layer"><strong>CycloneDDS</strong><span>负责发现、发布/订阅、网络接口和传输配置。</span></div><div class="layer"><strong>操作系统</strong><span>网卡、路由、多播、防火墙、Socket 缓冲区和内核限制。</span></div></div>
+          <pre><code>echo "$RMW_IMPLEMENTATION"
+echo "$CYCLONEDDS_URI"
+ip addr
+ip route
+sysctl net.core.rmem_max
+ros2 node list
+ros2 topic list</code></pre>
+          <h3>多网卡与自动选择</h3>
+          <p>CycloneDDS 会根据接口状态、地址类型和多播能力选择网络接口。存在 Wi-Fi、有线、VPN、容器网桥等多张网卡时，自动选择可能不符合实际通信需求，此时应在配置中明确指定接口。</p>
+          <h3>Socket 接收缓冲区</h3>
+          <p>CycloneDDS 可以请求扩大 Socket 接收缓冲区。如果配置中的最小值高于操作系统允许的上限，DDS 初始化可能报告错误。通用处理方法是：</p>
+          <ol><li>读取 CycloneDDS 配置要求的最小缓冲区。</li><li>使用 <code>sysctl net.core.rmem_max</code> 查看内核上限。</li><li>确认错误确实来自两者不匹配，而非先盲目修改。</li><li>由系统管理员按数据量和安全要求调整内核参数。</li><li>重新启动进程，并用节点与话题列表建立基线。</li></ol>
+          <div class="note"><strong>不要照抄单机数值：</strong>合理缓冲区取决于消息大小、频率、并发话题、内存和网络环境。知识库只保存判断方法，不固化某台机器的参数。</div>
+        </section>
+
+        <section id="middleware">
+          <h2>10｜通信中间件性能比较</h2>
+          <p class="lead">“某中间件一定更快”通常缺少条件。性能结论必须说明消息、进程、机器、传输方式和测试指标。</p>
+          <table><thead><tr><th>维度</th><th>需要比较的内容</th></tr></thead><tbody>
+            <tr><td>部署范围</td><td>进程内、同机进程间，还是跨机器通信。</td></tr><tr><td>数据规模</td><td>小控制消息还是大图像、点云。</td></tr><tr><td>复制次数</td><td>是否使用共享内存、零拷贝，是否发生序列化。</td></tr><tr><td>实时性</td><td>平均延迟、尾延迟、抖动和丢包。</td></tr><tr><td>资源消耗</td><td>CPU、内存、网络带宽与线程调度成本。</td></tr><tr><td>功能成本</td><td>发现机制、QoS、跨平台互操作和可配置性。</td></tr>
+          </tbody></table>
+          <p>Cyber RT 针对 Apollo 的模块组织、调度和通信进行了深度整合，在特定部署中可能减少通用框架开销；DDS 提供标准化发布/订阅、发现与 QoS，适合多实现互操作。最终应以同一硬件、同一消息和同一指标进行实测，而不是只比较框架名称。</p>
+        </section>
+
+        <section id="remote">
+          <h2>11｜远程开发环境识别</h2>
+          <p class="lead">同一块屏幕里可能同时存在本地电脑、远程主机和容器。多数“路径不存在”或“代理无效”都来自环境判断错误。</p>
+          <table><thead><tr><th>层级</th><th>常见职责</th><th>需要确认</th></tr></thead><tbody>
+            <tr><td>本地电脑</td><td>编辑器界面、浏览器、本地文件与本地代理。</td><td>本地路径和软件是否真实存在。</td></tr><tr><td>远程主机</td><td>SSH 会话、项目源码、Docker 和远端网络。</td><td>主机名、用户、当前目录和环境变量。</td></tr><tr><td>容器</td><td>隔离的运行环境、依赖和应用进程。</td><td>是否挂载目录、是否加载软件环境。</td></tr>
+          </tbody></table>
+          <pre><code>hostname
+whoami
+pwd
+cat /etc/os-release
+printenv | grep -i proxy</code></pre>
+          <div class="note"><strong>代理原则：</strong><code>127.0.0.1</code> 永远表示“当前这台机器自己”。本地电脑的代理不会自动变成远程主机或容器的代理。</div>
+        </section>
+
+        <section id="ai-config">
+          <h2>12｜AI 编程助手的项目配置</h2>
+          <p class="lead">项目指令文件的目标，是让 AI 理解稳定的工程约束，而不是记录临时聊天或个人机器信息。</p>
+          <div class="grid"><div class="mini"><h3>适合写入</h3><p>项目目标、目录结构、语言版本、代码风格、测试命令、不可破坏的接口与审查要求。</p></div><div class="mini"><h3>不应写入</h3><p>密码、Token、密钥、内网 IP、真实数据、个人目录、临时故障和未公开资料。</p></div></div>
+          <h3>第一性原理式描述</h3>
+          <ol><li><strong>目标：</strong>最终要实现什么可验证结果？</li><li><strong>事实：</strong>哪些输入、接口和环境是确定的？</li><li><strong>约束：</strong>哪些行为禁止，哪些格式必须保留？</li><li><strong>最小步骤：</strong>怎样用最少假设验证核心链路？</li><li><strong>验收：</strong>用什么测试或输出判断完成？</li></ol>
+          <div class="note warning"><strong>安全边界：</strong>公开仓库中的配置文件同样是公开内容。任何凭据都应放入受保护的 Secret 或本地环境变量，不能提交到 Git。</div>
+        </section>
+
+        <section id="references" class="refs">
+          <h2>官方参考资料</h2>
+          <ul>
+            <li><a href="https://docs.ros.org/en/humble/Tutorials/Beginner-CLI-Tools/Understanding-ROS2-Nodes/Understanding-ROS2-Nodes.html" target="_blank" rel="noreferrer">ROS 2 Humble：理解节点</a></li>
+            <li><a href="https://docs.ros.org/en/humble/Concepts/Basic/Interfaces-Topics-Services-Actions.html" target="_blank" rel="noreferrer">ROS 2：Topics、Services 与 Actions</a></li>
+            <li><a href="https://docs.ros.org/en/humble/Tutorials/Ros2bag/Recording-And-Playing-Back-Data.html" target="_blank" rel="noreferrer">ROS 2 Humble：录制与回放数据</a></li>
+            <li><a href="https://docs.ros.org/en/humble/p/tf2_ros/" target="_blank" rel="noreferrer">ROS 2 Humble：tf2_ros</a></li>
+            <li><a href="https://mcap.dev/guides/cli" target="_blank" rel="noreferrer">MCAP 官方 CLI 指南</a></li>
+            <li><a href="https://docs.docker.com/reference/cli/docker/container/cp/" target="_blank" rel="noreferrer">Docker 官方：docker cp</a></li>
+            <li><a href="https://cyclonedds.io/docs/cyclonedds/latest/config/" target="_blank" rel="noreferrer">CycloneDDS 官方配置指南</a></li>
+            <li><a href="https://apollo.baidu.com/docs/apollo/latest/" target="_blank" rel="noreferrer">Apollo 官方文档</a></li>
+          </ul>
+        </section>
+      </article>
+    </div>
+  </main>
+  <footer><div class="shell foot"><span>© <span id="year"></span> Shirley · 通用工程知识手册</span><a href="#top">返回顶部 ↑</a></div></footer>
+  <script>const root=document.documentElement,button=document.getElementById('themeToggle');const saved=localStorage.getItem('kb-theme');if(saved==='dark'||(!saved&&matchMedia('(prefers-color-scheme: dark)').matches))root.dataset.theme='dark';button.addEventListener('click',()=>{const next=root.dataset.theme==='dark'?'light':'dark';root.dataset.theme=next;localStorage.setItem('kb-theme',next)});document.getElementById('year').textContent=new Date().getFullYear();</script>
+</body>
+</html>

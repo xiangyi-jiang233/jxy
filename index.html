@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Shirley 的个人技术知识库，记录 RoboBus、ROS 2、Linux 与自动驾驶学习笔记。">
+  <meta name="description" content="Shirley 的个人技术知识库，整理 ROS 2、机器人数据、Linux、容器与通信中间件等通用工程知识。">
   <meta name="theme-color" content="#111827">
   <title>Shirley 的技术知识库</title>
   <style>
@@ -279,8 +279,8 @@
         <span>Shirley Knowledge</span>
       </a>
       <div class="nav-links">
-        <a href="#notes">学习笔记</a>
-        <a href="#robobus">RoboBus</a>
+        <a href="notes/ros2-engineering-handbook.html">工程手册</a>
+        <a href="#notes">知识主题</a>
         <a href="#linux">Linux</a>
         <a href="https://github.com/xiangyi-jiang233/jxy" target="_blank" rel="noreferrer">GitHub ↗</a>
       </div>
@@ -292,18 +292,18 @@
     <section class="hero" id="top">
       <p class="eyebrow">● Learning in public</p>
       <h1>把每天学到的，<br>变成随时可查的知识。</h1>
-      <p class="hero-copy">记录自动驾驶、RoboBus 运维、ROS 2 与 Linux 实践。内容从真实问题出发，持续整理、验证和更新。</p>
+      <p class="hero-copy">记录 ROS 2、机器人数据、Linux、容器与通信中间件知识。内容从工程问题出发，提炼成可迁移、可验证的通用方法。</p>
       <div class="search-wrap">
         <span class="search-icon" aria-hidden="true">⌕</span>
         <label for="searchInput">搜索知识库</label>
-        <input class="search" id="searchInput" type="search" placeholder="搜索：SCP、ORIN、ROS 2、删除文件夹……" autocomplete="off">
+        <input class="search" id="searchInput" type="search" placeholder="搜索：TF2、MCAP、CycloneDDS、docker cp……" autocomplete="off">
       </div>
     </section>
 
     <section class="stats" aria-label="知识库统计">
-      <div class="stat"><strong>10+</strong><span>知识主题</span></div>
-      <div class="stat"><strong>25+</strong><span>常用命令</span></div>
-      <div class="stat"><strong>3</strong><span>核心设备</span></div>
+      <div class="stat"><strong>20+</strong><span>知识主题</span></div>
+      <div class="stat"><strong>40+</strong><span>通用命令</span></div>
+      <div class="stat"><strong>12</strong><span>手册章节</span></div>
       <div class="stat"><strong>持续</strong><span>整理与更新</span></div>
     </section>
 
@@ -311,9 +311,9 @@
       <aside class="sidebar" aria-label="内容目录">
         <p class="side-title">知识分类</p>
         <nav class="side-nav">
-          <a href="#notes">最新笔记 <span>07</span></a>
-          <a href="#robobus">RoboBus <span>01</span></a>
-          <a href="#linux">Linux <span>07</span></a>
+          <a href="notes/ros2-engineering-handbook.html">工程手册 <span>12</span></a>
+          <a href="#notes">知识主题 <span>10</span></a>
+          <a href="#linux">Linux 速查 <span>07</span></a>
           <a href="#about">关于本站</a>
         </nav>
       </aside>
@@ -322,84 +322,90 @@
         <section class="section" id="notes">
           <div class="section-head">
             <div>
-              <h2>最新学习笔记</h2>
-              <p class="section-note">从当天遇到的问题开始，整理成下次可复用的答案。</p>
+              <h2>通用知识主题</h2>
+              <p class="section-note">按主题阅读，也可以直接搜索概念、工具或问题。</p>
             </div>
           </div>
 
           <div class="card-grid" id="noteGrid">
-            <article class="card searchable" data-keywords="周报 7月14 7月19 autoware robobus linux failcase lichtblick docker cyclonedds tf mcap issue">
-              <span class="tag">周知识专题</span>
-              <h3>7.14—7.19：从环境搭建到数据闭环</h3>
-              <p>完整整理上周的 Autoware、RoboBus、Linux、DDS、TF、MCAP、Issue 与数据处理知识。</p>
-              <div class="card-meta"><span>2026-07-14—19 · 完整专题</span><a class="arrow" href="notes/week-2026-07-14-19.html">阅读全文 →</a></div>
+            <article class="card searchable" data-keywords="通用 工程手册 ros2 node topic tf2 rosbag mcap python argparse docker cp readlink soft link dds rmw cyclonedds cyber remote ssh ai config">
+              <span class="tag">通用工程手册</span>
+              <h3>ROS 2 与机器人数据工程手册</h3>
+              <p>从 ROS 2 图、TF2、MCAP 到 Docker、CycloneDDS 与 Python 工具设计，只保留可迁移、可复用的知识。</p>
+              <div class="card-meta"><span>12 个主题 · 持续更新</span><a class="arrow" href="notes/ros2-engineering-handbook.html">打开手册 →</a></div>
             </article>
 
-            <article class="card searchable" data-keywords="robobus 自驾 维护 终端 ipc orin wifi rviz hmi">
-              <span class="tag">RoboBus</span>
-              <h3>RoboBus 自驾维护终端操作流程</h3>
-              <p>连接正确车辆、检查 IPC / ORIN / ROS 在线状态，选择版本并启动自驾服务。</p>
-              <div class="card-meta"><span>2026-07-15 · 6 分钟</span><a class="arrow" href="notes/week-2026-07-14-19.html#robobus">阅读 →</a></div>
+            <article class="card searchable" data-keywords="ros2 node topic service action interface graph 节点 话题 服务 动作">
+              <span class="tag">ROS 2 基础</span>
+              <h3>ROS 2 图与核心命令</h3>
+              <p>理解节点、话题、服务、动作和接口，并用标准命令观察正在运行的系统。</p>
+              <div class="card-meta"><span>概念 · 发现 · 验证</span><a class="arrow" href="notes/ros2-engineering-handbook.html#ros-graph">阅读 →</a></div>
             </article>
 
-            <article class="card searchable" data-keywords="ssh scp windows ipc 视频 远程 文件 传输">
-              <span class="tag">远程连接</span>
-              <h3>从 IPC 安全拉取录屏文件</h3>
-              <p>用 SSH 确认文件路径，再通过 SCP 将 NoMachine 录制的视频传到 Windows 本机。</p>
-              <div class="card-meta"><span>2026-07-15 · 4 分钟</span><a class="arrow" href="notes/week-2026-07-14-19.html#robobus">阅读 →</a></div>
+            <article class="card searchable" data-keywords="tf2 tf tree frame transform 坐标系 变换">
+              <span class="tag">坐标变换</span>
+              <h3>TF2 与坐标系</h3>
+              <p>从父子坐标系、静态与动态变换入手，掌握 TF 树的查看和排障方法。</p>
+              <div class="card-meta"><span>原理 · 工具 · 排障</span><a class="arrow" href="notes/ros2-engineering-handbook.html#tf2">阅读 →</a></div>
             </article>
 
-            <article class="card searchable" data-keywords="linux pwd cd ls mkdir rm 删除 文件夹 返回上一级">
+            <article class="card searchable" data-keywords="rosbag mcap record play info 日志 录制 回放">
+              <span class="tag">机器人数据</span>
+              <h3>rosbag 与 MCAP</h3>
+              <p>了解消息日志的录制、检查和回放，并建立处理数据前先验证元信息的习惯。</p>
+              <div class="card-meta"><span>录制 · 检查 · 回放</span><a class="arrow" href="notes/ros2-engineering-handbook.html#rosbag">阅读 →</a></div>
+            </article>
+
+            <article class="card searchable" data-keywords="mcap cli info doctor recover filter merge 时间戳 切割">
+              <span class="tag">数据工具</span>
+              <h3>MCAP 检查、时间与切割</h3>
+              <p>认识常用工具、时间基准和切割边界，避免只看文件名或凭感觉处理数据。</p>
+              <div class="card-meta"><span>检查 · 恢复 · 切割</span><a class="arrow" href="notes/ros2-engineering-handbook.html#mcap-tools">阅读 →</a></div>
+            </article>
+
+            <article class="card searchable" data-keywords="python cli argparse 命令行 参数 校验 日志">
+              <span class="tag">Python</span>
+              <h3>可复用命令行工具设计</h3>
+              <p>用清晰参数、输入校验、可读输出和明确退出码，让一次性脚本成长为稳定工具。</p>
+              <div class="card-meta"><span>参数 · 校验 · 可维护性</span><a class="arrow" href="notes/ros2-engineering-handbook.html#python-cli">阅读 →</a></div>
+            </article>
+
+            <article class="card searchable" data-keywords="docker container cp volume mount 文件 容器">
+              <span class="tag">容器</span>
+              <h3>Docker 与文件流转</h3>
+              <p>区分镜像、容器、挂载和复制，理解文件究竟位于宿主机还是容器内部。</p>
+              <div class="card-meta"><span>路径 · 挂载 · 复制</span><a class="arrow" href="notes/ros2-engineering-handbook.html#docker">阅读 →</a></div>
+            </article>
+
+            <article class="card searchable" data-keywords="linux path symlink readlink ln soft link 路径 软链接">
               <span class="tag">Linux</span>
-              <h3>Linux 文件与目录操作速查</h3>
-              <p>常用命令的作用、使用场景和安全提醒，尤其注意 rm 与 rm -r 的区别。</p>
-              <div class="card-meta"><span>2026-07-15 · 5 分钟</span><a class="arrow" href="notes/week-2026-07-14-19.html#commands">速查 →</a></div>
+              <h3>路径与软链接</h3>
+              <p>掌握绝对路径、相对路径和符号链接，定位“文件存在但程序找不到”的常见原因。</p>
+              <div class="card-meta"><span>路径 · 链接 · 定位</span><a class="arrow" href="notes/ros2-engineering-handbook.html#links">阅读 →</a></div>
             </article>
 
-            <article class="card searchable" data-keywords="ros2 autoware acados git tls gnutls 网络 失败">
-              <span class="tag">ROS 2</span>
-              <h3>依赖拉取失败：从 TLS 错误定位网络问题</h3>
-              <p>理解 Git 拉取失败与代理、网络稳定性之间的关系，并建立从现象到原因的排查思路。</p>
-              <div class="card-meta"><span>2026-07-14 · 8 分钟</span><a class="arrow" href="notes/week-2026-07-14-19.html#environment">阅读 →</a></div>
+            <article class="card searchable" data-keywords="dds rmw cyclonedds qos discovery network interface 通信 中间件">
+              <span class="tag">通信中间件</span>
+              <h3>DDS、RMW 与 CycloneDDS</h3>
+              <p>理解 ROS 2 通信分层、发现机制、QoS 和多网卡选择，建立由上到下的排障顺序。</p>
+              <div class="card-meta"><span>分层 · QoS · 网络</span><a class="arrow" href="notes/ros2-engineering-handbook.html#dds">阅读 →</a></div>
             </article>
 
-            <article class="card searchable" data-keywords="cyclonedds dds rmw qos 网卡绑定 docker tailscale">
-              <span class="tag">ROS 2 通信</span>
-              <h3>DDS、CycloneDDS 与网卡绑定</h3>
-              <p>理解 ROS 2 的通信链路、RMW、QoS，以及为什么多网卡环境需要指定通信接口。</p>
-              <div class="card-meta"><span>2026-07-17 · 10 分钟</span><a class="arrow" href="notes/week-2026-07-14-19.html#middleware">阅读 →</a></div>
+            <article class="card searchable" data-keywords="middleware performance latency throughput cpu memory benchmark 中间件 性能 延迟 吞吐">
+              <span class="tag">性能分析</span>
+              <h3>通信中间件性能比较</h3>
+              <p>用延迟、吞吐、资源占用和可靠性构造公平测试，避免脱离场景比较单一数字。</p>
+              <div class="card-meta"><span>指标 · 变量 · 基准测试</span><a class="arrow" href="notes/ros2-engineering-handbook.html#middleware">阅读 →</a></div>
             </article>
 
-            <article class="card searchable" data-keywords="tf tf树 map odom base_link imu 三轴 加速度 角速度 mcap rosbag">
-              <span class="tag">数据与坐标系</span>
-              <h3>TF、TF 树与 MCAP 基础</h3>
-              <p>理解车辆坐标关系、IMU 三轴数据，以及自动驾驶多话题日志的录制与回放。</p>
-              <div class="card-meta"><span>2026-07-18—19 · 9 分钟</span><a class="arrow" href="notes/week-2026-07-14-19.html#tf-mcap">阅读 →</a></div>
-            </article>
-
-            <article class="card searchable" data-keywords="数据闭环 issue 工单 异常筛选 场景包 20秒 算法 复现">
-              <span class="tag">数据流程</span>
-              <h3>异常数据闭环与 Issue 跟踪</h3>
-              <p>从车辆录制、回放筛选、规范化切割、证据上传到算法复现与结果回填。</p>
-              <div class="card-meta"><span>2026-07-18 · 8 分钟</span><a class="arrow" href="notes/week-2026-07-14-19.html#workflow">阅读 →</a></div>
+            <article class="card searchable" data-keywords="remote development ssh shell container ai config instruction 远程 开发 环境 配置">
+              <span class="tag">开发环境</span>
+              <h3>远程环境与 AI 项目配置</h3>
+              <p>先识别命令实际运行的位置，再用项目级规则记录通用约定、验证方法和安全边界。</p>
+              <div class="card-meta"><span>环境 · 约定 · 验证</span><a class="arrow" href="notes/ros2-engineering-handbook.html#remote">阅读 →</a></div>
             </article>
           </div>
-          <div class="empty" id="emptyState">没有找到匹配的笔记。试试更短的关键词，例如“IPC”或“Linux”。</div>
-        </section>
-
-        <section class="section" id="robobus">
-          <div class="section-head">
-            <div>
-              <h2>RoboBus 启动流程</h2>
-              <p class="section-note">操作前先确认车辆与 Wi-Fi，避免控制到其他车辆。</p>
-            </div>
-          </div>
-          <div class="flow">
-            <div class="flow-step"><strong>确认车辆</strong><small>核对 Wi-Fi 与目标车辆</small></div>
-            <div class="flow-step"><strong>智能重连</strong><small>确认 IPC、ORIN、ROS 在线</small></div>
-            <div class="flow-step"><strong>状态检查</strong><small>选择常用开发版本</small></div>
-            <div class="flow-step"><strong>启动服务</strong><small>关闭 HMI，打开 RViz 检查</small></div>
-          </div>
+          <div class="empty" id="emptyState">没有找到匹配的主题。试试更短的关键词，例如“TF2”或“Linux”。</div>
         </section>
 
         <section class="section" id="linux">
@@ -414,9 +420,9 @@
             <div class="command searchable" data-keywords="ls 列出 文件"><code>ls</code><span>列出目录中的文件和文件夹</span></div>
             <div class="command searchable" data-keywords="cd 进入 目录"><code>cd 目录</code><span>进入指定目录；<code>cd ..</code> 返回上一级</span></div>
             <div class="command searchable" data-keywords="mkdir 创建 文件夹"><code>mkdir</code><span>创建新文件夹</span></div>
-            <div class="command searchable" data-keywords="rm 删除 文件"><code>rm 文件</code><span>删除文件，执行前务必核对名称</span></div>
-            <div class="command searchable" data-keywords="rm -r 删除 文件夹 递归"><code>rm -r</code><span>删除文件夹及其中内容，谨慎使用</span></div>
-            <div class="command searchable" data-keywords="scp 传输 远程 windows ipc"><code>scp</code><span>在本机与远程 IPC 之间安全传输文件</span></div>
+            <div class="command searchable" data-keywords="rm 删除 文件 安全"><code>rm -i</code><span>删除文件前逐项确认，适合不熟悉目录时使用</span></div>
+            <div class="command searchable" data-keywords="readlink 路径 软链接"><code>readlink -f</code><span>解析路径或软链接指向的最终位置</span></div>
+            <div class="command searchable" data-keywords="docker cp 容器 文件 复制"><code>docker cp</code><span>在宿主机与容器之间复制文件或目录</span></div>
           </div>
         </section>
 
@@ -424,7 +430,7 @@
           <div class="card">
             <span class="tag">About</span>
             <h3>这是一个会持续生长的技术知识库</h3>
-            <p>用于沉淀日常学习日志、设备结构、操作流程、命令速查与故障排查。每篇内容尽量回答三个问题：发生了什么、为什么、下次怎么做。</p>
+            <p>用于沉淀 ROS 2、机器人数据、Linux、容器与通信中间件中的通用概念、标准命令和排障方法。每篇内容尽量回答三个问题：它是什么、为什么、如何验证。</p>
             <div class="card-meta"><span>Built with GitHub Pages</span><a class="arrow" href="https://github.com/xiangyi-jiang233/jxy" target="_blank" rel="noreferrer">查看源码 ↗</a></div>
           </div>
         </section>

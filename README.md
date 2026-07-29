@@ -8,7 +8,6 @@
 
 ## 当前内容
 
-- 工作指令库：Autoware 容器每日启动、MPC Planner 与 DDS 故障恢复
 - ROS 2 与机器人数据工程手册（12 个通用主题）
 - ROS 2 节点、话题、TF2 与 rosbag
 - MCAP 检查、时间、切割与恢复
@@ -22,6 +21,6 @@
 
 ## 更新方式
 
-修改 `index.html`、`notes/` 或 `work-commands/` 中的内容并提交到 `main` 分支，GitHub Actions 会自动重新发布网站。
+修改 `index.html` 或 `notes/` 中的文章并提交到 `main` 分支，GitHub Actions 会自动重新发布网站。
 
-后续新增或修订的日常工作命令统一维护在 `work-commands/`。工作指令区只记录已验证的命令和必要的非敏感环境路径，不收录密码、密钥、真实 IP、设备编号或内部业务数据。
+本站不收录真实 IP、主机名、本机绝对路径、账号密钥、设备编号或内部流程；示例统一使用占位符。

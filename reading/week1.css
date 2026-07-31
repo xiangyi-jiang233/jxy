@@ -1,0 +1,81 @@
+.week1-panel {
+  display: grid;
+  gap: 16px;
+}
+.week1-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, .8fr);
+  gap: 16px;
+}
+.week1-goals ul,
+.week1-tree ul,
+.week1-card ul {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+.week1-tree pre {
+  margin: 0;
+  white-space: pre-wrap;
+  font-family: inherit;
+  line-height: 1.8;
+  color: var(--text);
+}
+.week1-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.week1-card {
+  position: relative;
+  overflow: hidden;
+}
+.week1-card::after {
+  content: attr(data-day);
+  position: absolute;
+  right: -2px;
+  top: -14px;
+  font-size: 76px;
+  font-weight: 800;
+  color: color-mix(in srgb, var(--primary-2) 8%, transparent);
+  pointer-events: none;
+}
+.week1-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  position: relative;
+  z-index: 1;
+}
+.week1-card-head h3 {
+  margin: 2px 0 0;
+}
+.week1-card-section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+  position: relative;
+  z-index: 1;
+}
+.week1-card-section strong {
+  display: block;
+  margin-bottom: 5px;
+}
+.week1-source-note {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+  background: var(--bg);
+}
+.week1-card .actions {
+  position: relative;
+  z-index: 1;
+}
+@media (max-width: 900px) {
+  .week1-overview,
+  .week1-card-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -301,9 +301,9 @@
     </section>
 
     <section class="stats" aria-label="知识库统计">
-      <div class="stat"><strong>20+</strong><span>知识主题</span></div>
+      <div class="stat"><strong>25+</strong><span>知识主题</span></div>
       <div class="stat"><strong>40+</strong><span>通用命令</span></div>
-      <div class="stat"><strong>12</strong><span>手册章节</span></div>
+      <div class="stat"><strong>15</strong><span>手册章节</span></div>
       <div class="stat"><strong>持续</strong><span>整理与更新</span></div>
     </section>
 
@@ -311,8 +311,8 @@
       <aside class="sidebar" aria-label="内容目录">
         <p class="side-title">知识分类</p>
         <nav class="side-nav">
-          <a href="notes/ros2-engineering-handbook.html">工程手册 <span>12</span></a>
-          <a href="#notes">知识主题 <span>10</span></a>
+          <a href="notes/ros2-engineering-handbook.html">工程手册 <span>15</span></a>
+          <a href="#notes">知识主题 <span>13</span></a>
           <a href="#linux">Linux 速查 <span>07</span></a>
           <a href="#about">关于本站</a>
         </nav>
@@ -328,11 +328,11 @@
           </div>
 
           <div class="card-grid" id="noteGrid">
-            <article class="card searchable" data-keywords="通用 工程手册 ros2 node topic tf2 rosbag mcap python argparse docker cp readlink soft link dds rmw cyclonedds cyber remote ssh ai config">
+            <article class="card searchable" data-keywords="通用 工程手册 ros2 node topic tf2 rosbag mcap python argparse docker cp readlink soft link dds rmw cyclonedds autoware 场景包 录制 验证 cyber remote ssh ai config">
               <span class="tag">通用工程手册</span>
               <h3>ROS 2 与机器人数据工程手册</h3>
-              <p>从 ROS 2 图、TF2、MCAP 到 Docker、CycloneDDS 与 Python 工具设计，只保留可迁移、可复用的知识。</p>
-              <div class="card-meta"><span>12 个主题 · 持续更新</span><a class="arrow" href="notes/ros2-engineering-handbook.html">打开手册 →</a></div>
+              <p>从 ROS 2 图、TF2、MCAP 到 Docker、Autoware、CycloneDDS 与场景包流程，只保留可迁移、可复用的知识。</p>
+              <div class="card-meta"><span>15 个主题 · 持续更新</span><a class="arrow" href="notes/ros2-engineering-handbook.html">打开手册 →</a></div>
             </article>
 
             <article class="card searchable" data-keywords="ros2 node topic service action interface graph 节点 话题 服务 动作">
@@ -404,6 +404,27 @@
               <p>先识别命令实际运行的位置，再用项目级规则记录通用约定、验证方法和安全边界。</p>
               <div class="card-meta"><span>环境 · 约定 · 验证</span><a class="arrow" href="notes/ros2-engineering-handbook.html#remote">阅读 →</a></div>
             </article>
+            <article class="card searchable" data-keywords="autoware docker launch setup bash map vehicle sensor model 启动 地图 模型">
+              <span class="tag">Autoware</span>
+              <h3>容器启动与分层验证</h3>
+              <p>从容器、环境、软件包、地图和模型逐层验证，定位启动失败真正发生在哪一层。</p>
+              <div class="card-meta"><span>环境 · 资源 · 启动</span><a class="arrow" href="notes/ros2-engineering-handbook.html#autoware-start">阅读 →</a></div>
+            </article>
+
+            <article class="card searchable" data-keywords="ros2 bag record mcap topic info hz 录制 验证 回放">
+              <span class="tag">数据录制</span>
+              <h3>选择性录制与结果验证</h3>
+              <p>围绕复现目标选择状态、感知和规划数据，并用元信息与回放证明录制有效。</p>
+              <div class="card-meta"><span>选择 · 录制 · 验收</span><a class="arrow" href="notes/ros2-engineering-handbook.html#record-verify">阅读 →</a></div>
+            </article>
+
+            <article class="card searchable" data-keywords="scenario package reproducible issue output verify 场景包 配置 留痕 复现">
+              <span class="tag">工程闭环</span>
+              <h3>场景包制作与可复现留痕</h3>
+              <p>把原始数据、配置、生成过程和验证证据组织成可检查、可复现的完整闭环。</p>
+              <div class="card-meta"><span>配置 · 产物 · 证据</span><a class="arrow" href="notes/ros2-engineering-handbook.html#scenario-package">阅读 →</a></div>
+            </article>
+
           </div>
           <div class="empty" id="emptyState">没有找到匹配的主题。试试更短的关键词，例如“TF2”或“Linux”。</div>
         </section>

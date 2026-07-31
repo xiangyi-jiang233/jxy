@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="通用 ROS 2 与机器人数据工程手册：节点、话题、TF2、rosbag、MCAP、Python、Docker、CycloneDDS 与远程开发。">
+  <meta name="description" content="通用 ROS 2 与机器人数据工程手册：节点、话题、TF2、rosbag、MCAP、Python、Docker、Autoware、CycloneDDS、场景包与可复现工程流程。">
   <meta name="theme-color" content="#14281c">
   <title>ROS 2 与机器人数据工程手册｜Shirley Knowledge</title>
   <style>
@@ -34,7 +34,7 @@
 
     <div class="layout">
       <aside class="toc"><p class="toc-title">手册目录</p><nav>
-        <a href="#ros-graph">01 · ROS 2 图与命令</a><a href="#tf2">02 · TF2</a><a href="#rosbag">03 · rosbag 与 MCAP</a><a href="#mcap-tools">04 · MCAP 工具</a><a href="#mcap-time">05 · 时间与切割</a><a href="#python-cli">06 · Python CLI</a><a href="#docker">07 · Docker 文件流转</a><a href="#links">08 · 路径与软链接</a><a href="#dds">09 · DDS 与 CycloneDDS</a><a href="#middleware">10 · 中间件性能</a><a href="#remote">11 · 远程开发</a><a href="#ai-config">12 · AI 项目配置</a><a href="#references">官方参考</a>
+        <a href="#ros-graph">01 · ROS 2 图与命令</a><a href="#tf2">02 · TF2</a><a href="#rosbag">03 · rosbag 与 MCAP</a><a href="#mcap-tools">04 · MCAP 工具</a><a href="#mcap-time">05 · 时间与切割</a><a href="#python-cli">06 · Python CLI</a><a href="#docker">07 · Docker 文件流转</a><a href="#links">08 · 路径与软链接</a><a href="#dds">09 · DDS 与 CycloneDDS</a><a href="#middleware">10 · 中间件性能</a><a href="#remote">11 · 远程开发</a><a href="#ai-config">12 · AI 项目配置</a><a href="#autoware-start">13 · Autoware 启动</a><a href="#record-verify">14 · 录制与验证</a><a href="#scenario-package">15 · 场景包与留痕</a><a href="#references">官方参考</a>
       </nav></aside>
 
       <article>
@@ -196,6 +196,10 @@ ros2 node list
 ros2 topic list</code></pre>
           <h3>多网卡与自动选择</h3>
           <p>CycloneDDS 会根据接口状态、地址类型和多播能力选择网络接口。存在 Wi-Fi、有线、VPN、容器网桥等多张网卡时，自动选择可能不符合实际通信需求，此时应在配置中明确指定接口。</p>
+          <h3>参与者索引耗尽</h3>
+          <p>同一 DDS 域中，每个进程都需要一个参与者身份。若配置固定索引、索引范围过小，或旧进程尚未退出，可能出现 <code>Failed to find a free participant index for domain</code>。</p>
+          <ol><li>先确认同一域中是否残留多个 ROS 2 / Autoware 进程。</li><li>检查 CycloneDDS 配置中的 <code>ParticipantIndex</code> 与自动索引上限。</li><li>需要自动分配时，可使用 <code>ParticipantIndex=auto</code>，并按实际并发规模设置合理的 <code>MaxAutoParticipantIndex</code>。</li><li>配置修改后重启相关进程，再用节点和话题列表验证。</li></ol>
+          <div class="note warning"><strong>不要混淆两类问题：</strong>参与者索引耗尽属于 DDS 身份分配；“接口不支持多播”属于网络接口能力。修改 ParticipantIndex 不会修复多播问题。</div>
           <h3>Socket 接收缓冲区</h3>
           <p>CycloneDDS 可以请求扩大 Socket 接收缓冲区。如果配置中的最小值高于操作系统允许的上限，DDS 初始化可能报告错误。通用处理方法是：</p>
           <ol><li>读取 CycloneDDS 配置要求的最小缓冲区。</li><li>使用 <code>sysctl net.core.rmem_max</code> 查看内核上限。</li><li>确认错误确实来自两者不匹配，而非先盲目修改。</li><li>由系统管理员按数据量和安全要求调整内核参数。</li><li>重新启动进程，并用节点与话题列表建立基线。</li></ol>
@@ -232,6 +236,88 @@ printenv | grep -i proxy</code></pre>
           <h3>第一性原理式描述</h3>
           <ol><li><strong>目标：</strong>最终要实现什么可验证结果？</li><li><strong>事实：</strong>哪些输入、接口和环境是确定的？</li><li><strong>约束：</strong>哪些行为禁止，哪些格式必须保留？</li><li><strong>最小步骤：</strong>怎样用最少假设验证核心链路？</li><li><strong>验收：</strong>用什么测试或输出判断完成？</li></ol>
           <div class="note warning"><strong>安全边界：</strong>公开仓库中的配置文件同样是公开内容。任何凭据都应放入受保护的 Secret 或本地环境变量，不能提交到 Git。</div>
+        </section>
+
+        <section id="autoware-start">
+          <h2>13｜Docker 中启动 Autoware：分层验证</h2>
+          <p class="lead">稳定启动不是背下一条长命令，而是逐层证明容器、环境、软件包、地图和模型配置都正确。</p>
+          <div class="flow"><div><strong>确认容器</strong><small>目标容器处于运行状态</small></div><div><strong>加载环境</strong><small>先 ROS 2，再 Autoware 工作空间</small></div><div><strong>核对资源</strong><small>软件包、地图入口与模型存在</small></div><div><strong>启动并验证</strong><small>观察进程、节点、话题与界面</small></div></div>
+          <pre><code># 宿主机
+docker ps --filter name=&lt;容器名&gt;
+docker exec -it &lt;容器名&gt; bash
+
+# 容器内：先加载底层 ROS 2，再加载上层工作空间
+source /opt/ros/&lt;发行版&gt;/setup.bash
+source &lt;Autoware工作空间&gt;/install/setup.bash
+
+# 验证软件包和地图入口
+ros2 pkg prefix autoware_launch
+readlink -f &lt;地图入口&gt;
+
+# 示例：参数名以所用版本为准
+ros2 launch autoware_launch planning_simulator.launch.xml \
+  map_path:=&lt;地图路径&gt; \
+  vehicle_model:=&lt;车辆模型&gt; \
+  sensor_model:=&lt;传感器模型&gt;</code></pre>
+          <table><thead><tr><th>检查项</th><th>意义</th><th>常见失败</th></tr></thead><tbody>
+            <tr><td>容器</td><td>确认命令将在正确的隔离环境中执行。</td><td>进入旧容器、停止的容器或错误镜像。</td></tr>
+            <tr><td><code>setup.bash</code></td><td>把软件包、库和接口加入当前 Shell 环境。</td><td><code>Package not found</code>，新终端中 ROS 2 命令不可用。</td></tr>
+            <tr><td>地图入口</td><td>启动参数必须指向真实且完整的地图资源。</td><td>只修改软链接，却没有核对 <code>map_path</code>。</td></tr>
+            <tr><td>车辆/传感器模型</td><td>选择与运行场景匹配的参数、接口和坐标配置集合。</td><td>模型名存在，但与实际话题或标定不匹配。</td></tr>
+          </tbody></table>
+          <div class="note"><strong>挂载配置：</strong>源码、地图或参数目录通过绑定挂载进入容器时，修改挂载源配置后通常需要重新创建容器；仅重启旧容器不会自动应用新的挂载定义。</div>
+        </section>
+
+        <section id="record-verify">
+          <h2>14｜ROS 2 选择性录制与结果验证</h2>
+          <p class="lead">录制的目标是支撑复现和分析。话题应由问题决定，至少覆盖状态输入、算法输出和关键上下文。</p>
+          <table><thead><tr><th>数据角色</th><th>示例</th><th>回答的问题</th></tr></thead><tbody>
+            <tr><td>系统状态</td><td>&lt;定位或运动状态话题&gt;</td><td>系统当时处于什么位置和运动状态？</td></tr>
+            <tr><td>感知结果</td><td>&lt;目标检测或跟踪话题&gt;</td><td>算法识别到了什么？</td></tr>
+            <tr><td>规划结果</td><td>&lt;路径或轨迹话题&gt;</td><td>系统计划怎样运动？</td></tr>
+          </tbody></table>
+          <pre><code># 录制前确认类型、发布者和频率
+ros2 topic type &lt;话题名&gt;
+ros2 topic info -v &lt;话题名&gt;
+ros2 topic hz &lt;话题名&gt;
+
+# 录制需要的话题
+ros2 bag record -s mcap -o &lt;记录名称&gt; \
+  &lt;状态话题&gt; \
+  &lt;感知话题&gt; \
+  &lt;规划话题&gt;
+
+# 停止后检查
+ros2 bag info &lt;数据包路径&gt;
+ros2 bag play &lt;数据包路径&gt;</code></pre>
+          <h3>最低验收标准</h3>
+          <ol><li>数据包能够被 <code>ros2 bag info</code> 正常读取。</li><li>所有目标话题都存在，类型符合预期，消息数不是 0。</li><li>录制时长与实际操作时间基本一致。</li><li>消息频率和数量比例没有明显异常。</li><li>回放或下游工具能够消费数据；“文件已生成”不等于“录制成功”。</li></ol>
+          <div class="note warning"><strong>同名多类型冲突：</strong>若同一个话题名出现多个消息类型，依次使用 <code>ros2 topic info -v</code>、<code>ros2 node info</code> 和 <code>ros2 interface show</code> 定位发布者与接口定义，不要直接开始录制。</div>
+        </section>
+
+        <section id="scenario-package">
+          <h2>15｜场景包制作与可复现留痕</h2>
+          <p class="lead">场景包不是“脚本跑完后的一个文件”，而是原始数据、运行配置、生成过程和验证证据的组合。</p>
+          <div class="flow"><div><strong>验证原始数据</strong><small>时长、话题、消息数和时间范围</small></div><div><strong>核对配置</strong><small>地图、模型、输入输出与时间窗口</small></div><div><strong>执行生成</strong><small>保存命令、版本和关键日志</small></div><div><strong>验收留痕</strong><small>确认新产物并记录验证结果</small></div></div>
+          <h3>配置项为什么必须明确</h3>
+          <table><thead><tr><th>配置类别</th><th>作用</th></tr></thead><tbody>
+            <tr><td>地图</td><td>提供坐标参考、道路结构或仿真环境；必须与数据使用同一坐标体系。</td></tr>
+            <tr><td>车辆模型</td><td>选择车辆尺寸、运动学、控制接口等参数集合。</td></tr>
+            <tr><td>传感器模型</td><td>选择传感器布局、坐标关系和相关接口配置。</td></tr>
+            <tr><td>输入与输出</td><td>明确原始数据从哪里读取、产物写到哪里，以及是否允许覆盖。</td></tr>
+            <tr><td>时间窗口</td><td>限制用于复现的区间，并保证落在原始数据范围内。</td></tr>
+          </tbody></table>
+          <pre><code># 生成前：建立原始数据基线
+ros2 bag info &lt;原始数据包&gt;
+mcap info &lt;原始.mcap&gt;
+
+# 生成后：确认是本次产生的新文件
+ls -lht &lt;输出目录&gt;
+stat &lt;输出文件&gt;
+ros2 bag info &lt;输出数据包&gt;</code></pre>
+          <h3>可复现记录模板</h3>
+          <ol><li><strong>目标：</strong>本次要复现或验证什么。</li><li><strong>环境：</strong>软件版本、容器镜像或分支；不记录账号和密钥。</li><li><strong>原始数据：</strong>时长、时间范围、关键话题和消息数。</li><li><strong>配置：</strong>地图、模型、时间窗口及输入输出参数。</li><li><strong>执行：</strong>关键命令、脚本版本和必要日志。</li><li><strong>结果：</strong>产物名称、大小、生成时间及完整性检查。</li><li><strong>问题与验证：</strong>出现了什么、如何处理、处理后如何证明有效。</li></ol>
+          <div class="note"><strong>防止误判旧文件：</strong>同时检查文件名、修改时间、大小和元信息。若输出目录中已有同名产物，应明确覆盖策略或先使用新的输出名称。</div>
         </section>
 
         <section id="references" class="refs">

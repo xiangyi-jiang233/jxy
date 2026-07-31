@@ -1,0 +1,21 @@
+{
+  "book": "自动驾驶系统开发",
+  "author": "黄浴 杨子江",
+  "purpose": "结合ROS2、Autoware、MCAP、感知、定位、规划、控制实践进行系统学习",
+  "duration": "12周",
+  "daily_time": "45分钟",
+  "weekly_plan": [
+    {"week":1,"topic":"自动驾驶系统框架与计算机视觉基础","chapters":["第1章","第2章 2.1-2.3"],"engineering":"建立传感器-感知-定位-规划-控制全链路认知"},
+    {"week":2,"topic":"机器学习基础与硬件平台","chapters":["第2章 2.4-2.6","第3章"],"engineering":"对应ORIN、IPC、传感器和车载计算平台"},
+    {"week":3,"topic":"软件平台与传感器标定","chapters":["第4章","第5章 5.1"],"engineering":"映射ROS2节点、Topic、TF和标定流程"},
+    {"week":4,"topic":"单目视觉与深度估计","chapters":["第5章 5.2-5.4"],"engineering":"对应相机感知、目标检测和距离估计"},
+    {"week":5,"topic":"目标跟踪和多传感器融合","chapters":["第5章 5.5-5.10"],"engineering":"对应Autoware perception数据链路"},
+    {"week":6,"topic":"双目视觉、BEV与高级感知","chapters":["第5章 5.11-5.14"],"engineering":"理解单目、双目、BEV空间感知"},
+    {"week":7,"topic":"地图与定位","chapters":["第6章、第7章"],"engineering":"对应map、TF树、localization模块"},
+    {"week":8,"topic":"预测与规划","chapters":["第8章"],"engineering":"对应Autoware planning模块"},
+    {"week":9,"topic":"控制与MPC","chapters":["第9章"],"engineering":"对应MPC Planner和车辆控制链路"},
+    {"week":10,"topic":"仿真、安全和数据闭环","chapters":["第10章、第11章"],"engineering":"对应MCAP、Scenario-Sim、failcase复现流程"},
+    {"week":11,"topic":"泊车与车联网","chapters":["第12章、第13章"],"engineering":"了解低速自动驾驶和车路协同"},
+    {"week":12,"topic":"NeRF、扩散模型与总结","chapters":["第14章、第15章"],"engineering":"建立自动驾驶未来技术地图"}
+  ]
+}

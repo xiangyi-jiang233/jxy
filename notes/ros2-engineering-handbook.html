@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="通用 ROS 2 与机器人数据工程手册：节点、话题、TF2、rosbag、MCAP、Python、Docker、Autoware、CycloneDDS、场景包与可复现工程流程。">
+  <meta name="description" content="通用 ROS 2 与机器人数据工程手册：ROS 2、MCAP、Docker、Autoware、CycloneDDS、代理直连、场景包与实车仿真一致性分析。">
   <meta name="theme-color" content="#14281c">
   <title>ROS 2 与机器人数据工程手册｜Shirley Knowledge</title>
   <style>
@@ -34,7 +34,7 @@
 
     <div class="layout">
       <aside class="toc"><p class="toc-title">手册目录</p><nav>
-        <a href="#ros-graph">01 · ROS 2 图与命令</a><a href="#tf2">02 · TF2</a><a href="#rosbag">03 · rosbag 与 MCAP</a><a href="#mcap-tools">04 · MCAP 工具</a><a href="#mcap-time">05 · 时间与切割</a><a href="#python-cli">06 · Python CLI</a><a href="#docker">07 · Docker 文件流转</a><a href="#links">08 · 路径与软链接</a><a href="#dds">09 · DDS 与 CycloneDDS</a><a href="#middleware">10 · 中间件性能</a><a href="#remote">11 · 远程开发</a><a href="#ai-config">12 · AI 项目配置</a><a href="#autoware-start">13 · Autoware 启动</a><a href="#record-verify">14 · 录制与验证</a><a href="#scenario-package">15 · 场景包与留痕</a><a href="#references">官方参考</a>
+        <a href="#ros-graph">01 · ROS 2 图与命令</a><a href="#tf2">02 · TF2</a><a href="#rosbag">03 · rosbag 与 MCAP</a><a href="#mcap-tools">04 · MCAP 工具</a><a href="#mcap-time">05 · 时间与切割</a><a href="#python-cli">06 · Python CLI</a><a href="#docker">07 · Docker 文件流转</a><a href="#links">08 · 路径与软链接</a><a href="#dds">09 · DDS 与 CycloneDDS</a><a href="#middleware">10 · 中间件性能</a><a href="#remote">11 · 远程开发</a><a href="#ai-config">12 · AI 项目配置</a><a href="#autoware-start">13 · Autoware 启动</a><a href="#record-verify">14 · 录制与验证</a><a href="#scenario-package">15 · 场景包与留痕</a><a href="#simulation-consistency">16 · 仿真一致性</a><a href="#references">官方参考</a>
       </nav></aside>
 
       <article>
@@ -227,6 +227,19 @@ pwd
 cat /etc/os-release
 printenv | grep -i proxy</code></pre>
           <div class="note"><strong>代理原则：</strong><code>127.0.0.1</code> 永远表示“当前这台机器自己”。本地电脑的代理不会自动变成远程主机或容器的代理。</div>
+          <h3>代理开启时访问内网服务</h3>
+          <p>内网、虚拟组网或本地开发服务通常不应绕到公网代理。通用做法是在代理客户端中建立直连规则，并确保它们排在兜底代理规则之前。</p>
+          <ol><li>先判断目标是域名还是 IP；域名还要确认最终解析地址。</li><li>对私有地址段或内部域名后缀配置 <code>DIRECT</code>，不要只为单个完整 URL 写临时规则。</li><li>规则顺序遵循“更具体的直连规则在前，最终 <code>MATCH</code> / 默认代理在后”。</li><li>若客户端启用 TUN、Fake-IP 或远程 DNS，需同时检查 DNS 解析和路由结果。</li><li>修改后分别用域名和解析后的 IP 测试，确认请求没有被错误送入代理。</li></ol>
+          <pre><code># 常见私有地址范围（示意）
+10.0.0.0/8
+172.16.0.0/12
+192.168.0.0/16
+
+# 虚拟组网或内部域名使用各自的地址段/域名后缀
+&lt;内部网段&gt;  → DIRECT
+&lt;内部域名后缀&gt; → DIRECT
+最终兜底规则 → PROXY</code></pre>
+          <div class="note warning"><strong>不要公开真实入口：</strong>知识库只记录网段、规则优先级和验证方法，不保存真实内部域名、端口、账号或访问路径。</div>
         </section>
 
         <section id="ai-config">
@@ -318,6 +331,39 @@ ros2 bag info &lt;输出数据包&gt;</code></pre>
           <h3>可复现记录模板</h3>
           <ol><li><strong>目标：</strong>本次要复现或验证什么。</li><li><strong>环境：</strong>软件版本、容器镜像或分支；不记录账号和密钥。</li><li><strong>原始数据：</strong>时长、时间范围、关键话题和消息数。</li><li><strong>配置：</strong>地图、模型、时间窗口及输入输出参数。</li><li><strong>执行：</strong>关键命令、脚本版本和必要日志。</li><li><strong>结果：</strong>产物名称、大小、生成时间及完整性检查。</li><li><strong>问题与验证：</strong>出现了什么、如何处理、处理后如何证明有效。</li></ol>
           <div class="note"><strong>防止误判旧文件：</strong>同时检查文件名、修改时间、大小和元信息。若输出目录中已有同名产物，应明确覆盖策略或先使用新的输出名称。</div>
+        </section>
+
+        <section id="simulation-consistency">
+          <h2>16｜实车数据回放与闭环仿真一致性</h2>
+          <p class="lead">仿真与实车使用相似地图和轨迹，并不保证车辆会在同一时刻变道。轨迹差异常由时间、状态机、纵向速度和车辆动力学在闭环中共同累积。</p>
+          <h3>先区分三种“看起来一样”</h3>
+          <table><thead><tr><th>对齐对象</th><th>真正需要一致的内容</th></tr></thead><tbody>
+            <tr><td>几何轨迹</td><td>道路、车道线、目标路径和坐标变换。</td></tr>
+            <tr><td>时间过程</td><td>起始时刻、消息时间戳、回放倍率、延迟和插值。</td></tr>
+            <tr><td>闭环状态</td><td>速度、加速度、航向、转角、障碍物、规划状态和控制反馈。</td></tr>
+          </tbody></table>
+          <div class="note"><strong>核心判断：</strong>若早期候选变道轨迹能够重合，随后仿真恢复直行而实车继续横移，问题通常不只是地图几何误差，更可能是规划状态、触发条件、速度演化或控制反馈已经分叉。</div>
+
+          <h3>为什么固定速度会改变变道结果</h3>
+          <p>固定下发速度会改变车辆纵向位置、到达触发点的时刻、与周围目标的相对距离、TTC、可接受间隙和状态机条件。即使横向路径完全相同，仿真车辆也可能因为“更早或更晚到达某个判断位置”而在不同时间批准变道。</p>
+          <p>需要复现实车时，应优先回放实车速度、加速度和姿态状态，或使用与实车一致的闭环车辆模型；不能只固定一个速度值后比较最终轨迹。</p>
+
+          <h3>差异来源与观察信号</h3>
+          <table><thead><tr><th>层级</th><th>常见原因</th><th>应比较的信号</th></tr></thead><tbody>
+            <tr><td>时间同步</td><td>起始偏移、时间戳基准不同、回放倍率或消息延迟。</td><td>原始时间戳、仿真时钟、关键事件相对时间。</td></tr>
+            <tr><td>初始状态</td><td>初始位置、航向、速度或所在车道不一致。</td><td>位姿、纵向速度、横向速度、航向角和 yaw rate。</td></tr>
+            <tr><td>行为规划</td><td>可变道判断、批准、取消、迟滞或安全间隙不同。</td><td>变道状态、原因码、目标车道、碰撞检查和安全间隙。</td></tr>
+            <tr><td>感知预测</td><td>目标位置、速度、预测轨迹或消息丢失不同。</td><td>目标列表、预测轨迹、相对距离、TTC 和 QoS。</td></tr>
+            <tr><td>控制与车辆</td><td>转向延迟、执行器滞后、限幅、轮胎和车辆模型不同。</td><td>控制指令、转角反馈、加速度反馈和横向误差。</td></tr>
+          </tbody></table>
+
+          <h3>推荐诊断顺序</h3>
+          <div class="flow"><div><strong>统一时间轴</strong><small>对齐起点、时钟和关键事件</small></div><div><strong>统一初始状态</strong><small>位置、航向、速度和车道</small></div><div><strong>比较状态机</strong><small>何时申请、拒绝、批准或取消</small></div><div><strong>隔离动力学</strong><small>再检查控制延迟和车辆模型</small></div></div>
+          <ol><li>选取同一个关键事件作为零时刻，不只按视频画面或文件起点对齐。</li><li>叠加比较速度、加速度、航向角、yaw rate 和横向偏移。</li><li>记录规划器第一次产生变道候选、第一次拒绝和最终批准的时间及原因。</li><li>核对同一时刻的障碍物、预测轨迹、间隙和安全阈值。</li><li>最后再调整转向延迟、执行器响应、加减速度限制和车辆参数。</li></ol>
+
+          <h3>最小对照实验</h3>
+          <ul><li><strong>实验 A：</strong>固定速度与回放实车速度对比，只改变纵向输入。</li><li><strong>实验 B：</strong>固定规划输入，比较开环轨迹回放与完整闭环仿真。</li><li><strong>实验 C：</strong>暂时理想化执行器延迟，判断偏差主要来自规划还是控制。</li><li><strong>实验 D：</strong>固定同一障碍物序列和初始状态，逐项恢复感知、预测和动力学差异。</li></ul>
+          <div class="note warning"><strong>一次只改一个变量：</strong>同时修改速度、规划阈值和车辆模型，会让结果无法归因。每次实验都应保存输入、配置、关键时间点和输出轨迹。</div>
         </section>
 
         <section id="references" class="refs">

@@ -304,7 +304,7 @@
     <section class="stats" aria-label="知识库统计">
       <div class="stat"><strong>25+</strong><span>知识主题</span></div>
       <div class="stat"><strong>40+</strong><span>通用命令</span></div>
-      <div class="stat"><strong>17</strong><span>手册章节</span></div>
+      <div class="stat"><strong>19</strong><span>手册章节</span></div>
       <div class="stat"><strong>持续</strong><span>整理与更新</span></div>
     </section>
 
@@ -312,9 +312,9 @@
       <aside class="sidebar" aria-label="内容目录">
         <p class="side-title">知识分类</p>
         <nav class="side-nav">
-          <a href="notes/ros2-engineering-handbook.html">工程手册 <span>17</span></a>
+          <a href="notes/ros2-engineering-handbook.html">工程手册 <span>19</span></a>
           <a href="reading/">阅读与自检</a>
-          <a href="#notes">知识主题 <span>16</span></a>
+          <a href="#notes">知识主题 <span>18</span></a>
           <a href="#linux">Linux 速查 <span>07</span></a>
           <a href="#about">关于本站</a>
         </nav>
@@ -330,11 +330,11 @@
           </div>
 
           <div class="card-grid" id="noteGrid">
-            <article class="card searchable" data-keywords="通用 工程手册 ros2 node topic tf2 rosbag mcap python argparse docker cp readlink soft link dds rmw cyclonedds autoware 场景包 录制 验证 仿真 实车 变道 速度 状态机 代理 直连 excel 长数字 科学计数法 精度 cyber remote ssh ai config">
+            <article class="card searchable" data-keywords="通用 工程手册 ros2 node topic tf2 rosbag mcap python argparse docker cp readlink soft link dds rmw cyclonedds autoware 场景包 录制 验证 仿真 实车 变道 速度 状态机 代理 直连 excel 长数字 科学计数法 精度 git github branch commit push pull spi sclk mosi miso cpol cpha cyber remote ssh ai config">
               <span class="tag">通用工程手册</span>
               <h3>ROS 2 与机器人数据工程手册</h3>
-              <p>从 ROS 2、MCAP、Docker 与 Autoware，到仿真分析和表格数据精度保护，只保留可迁移、可复用的知识。</p>
-              <div class="card-meta"><span>17 个主题 · 持续更新</span><a class="arrow" href="notes/ros2-engineering-handbook.html">打开手册 →</a></div>
+              <p>从 ROS 2、MCAP、Docker 与 Autoware，到 Git、SPI、仿真分析和数据精度保护，只保留可迁移、可复用的知识。</p>
+              <div class="card-meta"><span>19 个主题 · 持续更新</span><a class="arrow" href="notes/ros2-engineering-handbook.html">打开手册 →</a></div>
             </article>
 
             <article class="card searchable" data-keywords="自动驾驶 书籍 阅读 12周 自检 主动回忆 工程映射 费曼 复习 队列 学习报告">
@@ -446,6 +446,20 @@
               <h3>Excel 长数字与精度保护</h3>
               <p>区分科学计数法显示与实际精度丢失，确保编号、序列号和长时间戳在复制、粘贴与导入时逐位保真。</p>
               <div class="card-meta"><span>识别 · 预防 · 恢复</span><a class="arrow" href="notes/ros2-engineering-handbook.html#excel-long-numbers">阅读 →</a></div>
+            </article>
+
+            <article class="card searchable" data-keywords="git github clone status remote branch log add commit push pull proxy 版本控制 分支 提交 远端 代理">
+              <span class="tag">版本控制</span>
+              <h3>Git 命令与 GitHub 协作</h3>
+              <p>理解工作区、暂存区、提交与远端的状态流，掌握分支协作和 GitHub 连接失败的代理排查。</p>
+              <div class="card-meta"><span>状态 · 提交 · 协作</span><a class="arrow" href="notes/ros2-engineering-handbook.html#git-github-workflow">阅读 →</a></div>
+            </article>
+
+            <article class="card searchable" data-keywords="spi serial peripheral interface sclk mosi miso cs cpol cpha mode embedded 同步 串行 通信 片选">
+              <span class="tag">嵌入式通信</span>
+              <h3>SPI 同步串行通信</h3>
+              <p>掌握信号线、全双工移位、四种时钟模式、寄存器读写代码结构与分层排查顺序。</p>
+              <div class="card-meta"><span>时序 · 模式 · 传输</span><a class="arrow" href="notes/ros2-engineering-handbook.html#spi-protocol">阅读 →</a></div>
             </article>
 
           </div>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="通用工程技术手册：ROS 2、MCAP、Docker、Autoware、CycloneDDS、场景仿真，以及 Excel 长数字与数据精度保护。">
+  <meta name="description" content="通用工程技术手册：ROS 2、MCAP、Docker、Autoware、Git/GitHub、SPI、场景仿真与数据精度保护。">
   <meta name="theme-color" content="#14281c">
   <title>ROS 2 与机器人数据工程手册｜Shirley Knowledge</title>
   <style>
@@ -34,7 +34,7 @@
 
     <div class="layout">
       <aside class="toc"><p class="toc-title">手册目录</p><nav>
-        <a href="#ros-graph">01 · ROS 2 图与命令</a><a href="#tf2">02 · TF2</a><a href="#rosbag">03 · rosbag 与 MCAP</a><a href="#mcap-tools">04 · MCAP 工具</a><a href="#mcap-time">05 · 时间与切割</a><a href="#python-cli">06 · Python CLI</a><a href="#docker">07 · Docker 文件流转</a><a href="#links">08 · 路径与软链接</a><a href="#dds">09 · DDS 与 CycloneDDS</a><a href="#middleware">10 · 中间件性能</a><a href="#remote">11 · 远程开发</a><a href="#ai-config">12 · AI 项目配置</a><a href="#autoware-start">13 · Autoware 启动</a><a href="#record-verify">14 · 录制与验证</a><a href="#scenario-package">15 · 场景包与留痕</a><a href="#simulation-consistency">16 · 仿真一致性</a><a href="#excel-long-numbers">17 · Excel 长数字</a><a href="#references">官方参考</a>
+        <a href="#ros-graph">01 · ROS 2 图与命令</a><a href="#tf2">02 · TF2</a><a href="#rosbag">03 · rosbag 与 MCAP</a><a href="#mcap-tools">04 · MCAP 工具</a><a href="#mcap-time">05 · 时间与切割</a><a href="#python-cli">06 · Python CLI</a><a href="#docker">07 · Docker 文件流转</a><a href="#links">08 · 路径与软链接</a><a href="#dds">09 · DDS 与 CycloneDDS</a><a href="#middleware">10 · 中间件性能</a><a href="#remote">11 · 远程开发</a><a href="#ai-config">12 · AI 项目配置</a><a href="#autoware-start">13 · Autoware 启动</a><a href="#record-verify">14 · 录制与验证</a><a href="#scenario-package">15 · 场景包与留痕</a><a href="#simulation-consistency">16 · 仿真一致性</a><a href="#excel-long-numbers">17 · Excel 长数字</a><a href="#git-github-workflow">18 · Git 与 GitHub</a><a href="#spi-protocol">19 · SPI 协议</a><a href="#references">官方参考</a>
       </nav></aside>
 
       <article>
@@ -433,6 +433,131 @@ ros2 bag info &lt;输出数据包&gt;</code></pre>
           <p class="muted">依据：Microsoft Support 的“<a href="https://support.microsoft.com/en-US/Excel/display-numbers-in-scientific-exponential-notation" target="_blank" rel="noreferrer">科学计数法显示</a>”“<a href="https://support.microsoft.com/en-US/Excel/format-numbers-as-text" target="_blank" rel="noreferrer">将数字格式设为文本</a>”和“<a href="https://support.microsoft.com/en-US/Excel/keeping-leading-zeros-and-large-numbers" target="_blank" rel="noreferrer">保留前导零与大数</a>”。</p>
         </section>
 
+        <section id="git-github-workflow">
+          <h2>18｜Git 命令与 GitHub 协作</h2>
+          <p class="lead">Git 是本地版本控制系统，GitHub 是托管 Git 仓库并提供 Issue、Pull Request、评审和自动化的平台。先理解状态流，再记少量高频命令。</p>
+
+          <h3>四个位置与一次完整流转</h3>
+          <div class="flow"><div><strong>工作区</strong><small>正在编辑的实际文件</small></div><div><strong>暂存区</strong><small>下一次提交准备包含的内容</small></div><div><strong>本地仓库</strong><small>由 commit 保存的历史快照</small></div><div><strong>远端仓库</strong><small>通过 fetch、pull、push 协作</small></div></div>
+          <pre><code>git status
+git add &lt;文件路径&gt;
+git diff --cached
+git commit -m "docs: describe the change"
+git push</code></pre>
+          <div class="note"><strong>核心理解：</strong><code>add</code> 不是上传，<code>commit</code> 也不是上传；只有 <code>push</code> 才把本地提交发送到远端仓库。</div>
+
+          <h3>先识别当前仓库</h3>
+          <table><thead><tr><th>命令</th><th>回答的问题</th></tr></thead><tbody>
+            <tr><td><code>git status</code></td><td>当前分支是什么？哪些文件已修改、已暂存或尚未跟踪？</td></tr>
+            <tr><td><code>git remote -v</code></td><td>本地仓库连接了哪些远端地址，拉取和推送分别指向哪里？</td></tr>
+            <tr><td><code>git branch --show-current</code></td><td>当前所在分支名称是什么？若处于 detached HEAD，可能没有输出。</td></tr>
+            <tr><td><code>git log --oneline -5</code></td><td>最近五次提交的短哈希和标题是什么？</td></tr>
+            <tr><td><code>git rev-parse --show-toplevel</code></td><td>当前仓库根目录的完整路径是什么？</td></tr>
+          </tbody></table>
+
+          <h3>克隆到指定目录</h3>
+          <pre><code># PowerShell：先进入目标盘和父目录
+D:
+cd &lt;父目录&gt;
+git clone &lt;仓库URL&gt; &lt;目录名&gt;
+
+# 克隆后确认实际位置
+cd &lt;目录名&gt;
+git rev-parse --show-toplevel
+git remote -v</code></pre>
+          <p><code>git clone</code> 默认在当前目录创建以仓库名命名的文件夹；最后一个参数可以显式指定目标目录名。找不到仓库文件夹时，应先确认执行命令时的当前路径，而不是只凭“下载过”判断位置。</p>
+
+          <h3>推荐的分支协作流程</h3>
+          <pre><code>git pull --ff-only
+git switch -c &lt;功能分支&gt;
+
+# 修改并检查
+git status
+git diff
+git add &lt;文件路径&gt;
+git diff --cached
+git commit -m "feat: describe the change"
+
+git push -u origin &lt;功能分支&gt;</code></pre>
+          <ol><li>从最新默认分支创建独立功能分支。</li><li>每个提交只表达一个清晰目的，提交前检查暂存差异。</li><li>推送分支后在 GitHub 创建 Pull Request。</li><li>通过评审和检查后合并，避免直接在默认分支堆积未经验证的修改。</li></ol>
+
+          <h3>连接 GitHub 失败时的代理判断</h3>
+          <pre><code>git config --global --get http.proxy
+git config --global --get https.proxy
+
+# 代理程序与 Git 在同一系统中运行时
+git config --global http.proxy http://127.0.0.1:&lt;代理端口&gt;
+git config --global https.proxy http://127.0.0.1:&lt;代理端口&gt;
+
+# 不再需要代理时
+git config --global --unset http.proxy
+git config --global --unset https.proxy</code></pre>
+          <ul>
+            <li><code>127.0.0.1</code> 表示“当前运行 Git 的系统自身”，不是局域网网卡地址。</li>
+            <li>Git 与代理客户端在同一 Windows 或 Linux 系统时，通常不应把 <code>127.0.0.1</code> 替换成本机局域网 IP。</li>
+            <li>Git 若运行在容器、虚拟机、WSL 或远程主机中，它们的 <code>127.0.0.1</code> 指向各自环境；此时应确认代理监听地址、端口、防火墙和宿主机可达地址。</li>
+            <li><code>Failed to connect to github.com:443</code> 只能说明 HTTPS 连接未建立，仍需分别检查 DNS、路由、代理是否监听以及 Git 代理配置。</li>
+          </ul>
+          <p class="muted">依据：<a href="https://git-scm.com/docs" target="_blank" rel="noreferrer">Git 官方参考</a>、<a href="https://git-scm.com/docs/git-status" target="_blank" rel="noreferrer">git status</a>、<a href="https://docs.github.com/en/pull-requests/get-started/pull-request-quickstart" target="_blank" rel="noreferrer">GitHub Pull Request 快速入门</a>。</p>
+        </section>
+
+        <section id="spi-protocol">
+          <h2>19｜SPI 同步串行通信</h2>
+          <p class="lead">SPI（Serial Peripheral Interface）是嵌入式系统常用的同步串行总线。控制器产生时钟并选择目标设备，数据通常在 MOSI 与 MISO 上同时移位。</p>
+
+          <h3>四根核心信号线</h3>
+          <table><thead><tr><th>信号</th><th>方向与作用</th></tr></thead><tbody>
+            <tr><td><code>SCLK / SCK</code></td><td>由控制器产生时钟，决定每一位数据何时改变和采样。</td></tr>
+            <tr><td><code>MOSI</code></td><td>Controller Out, Peripheral In；控制器发送给外设的数据。</td></tr>
+            <tr><td><code>MISO</code></td><td>Controller In, Peripheral Out；外设返回给控制器的数据。</td></tr>
+            <tr><td><code>CS / nCS</code></td><td>片选信号，常为低有效；一个总线连接多个外设时，通常每个外设需要独立片选。</td></tr>
+          </tbody></table>
+          <div class="note"><strong>全双工：</strong>每产生一个时钟，控制器在 MOSI 移出一位的同时，也会在 MISO 移入一位。即使只想读取，也常需要发送占位字节来产生时钟。</div>
+
+          <h3>SPI 模式：CPOL 与 CPHA</h3>
+          <table><thead><tr><th>模式</th><th>CPOL</th><th>CPHA</th><th>含义</th></tr></thead><tbody>
+            <tr><td>Mode 0</td><td>0</td><td>0</td><td>时钟空闲为低，在第一个边沿采样。</td></tr>
+            <tr><td>Mode 1</td><td>0</td><td>1</td><td>时钟空闲为低，在第二个边沿采样。</td></tr>
+            <tr><td>Mode 2</td><td>1</td><td>0</td><td>时钟空闲为高，在第一个边沿采样。</td></tr>
+            <tr><td>Mode 3</td><td>1</td><td>1</td><td>时钟空闲为高，在第二个边沿采样。</td></tr>
+          </tbody></table>
+          <p>模式、最大时钟频率、每字位数和位序必须按外设数据手册配置。模式不匹配时，常见现象是数据整体错位、位值不稳定或读回固定值。</p>
+
+          <h3>代码表达的通用结构</h3>
+          <pre><code>// 伪代码：函数名称由具体 MCU、SDK 或驱动决定
+spi_config_t config = {
+    .clock_hz = &lt;时钟频率&gt;,
+    .mode = SPI_MODE_0,
+    .bits_per_word = 8,
+    .bit_order = MSB_FIRST,
+};
+
+spi_init(&amp;config);
+
+cs_set(&lt;片选引脚&gt;, LOW);
+uint8_t received = spi_transfer(&lt;发送字节&gt;);
+cs_set(&lt;片选引脚&gt;, HIGH);</code></pre>
+          <p><code>spi_transfer()</code> 同时完成发送和接收。单纯调用“读取”而不产生时钟通常无法从外设获得数据。</p>
+
+          <h3>读取寄存器的通用模型</h3>
+          <pre><code>uint8_t tx[2] = {
+    &lt;读命令或寄存器地址&gt;,
+    0x00  // 占位字节，用于继续产生时钟
+};
+uint8_t rx[2] = {0};
+
+cs_set(&lt;片选引脚&gt;, LOW);
+spi_transfer_buffer(tx, rx, 2);
+cs_set(&lt;片选引脚&gt;, HIGH);
+
+uint8_t value = rx[1];</code></pre>
+          <div class="note warning"><strong>命令格式不是 SPI 总线规定的：</strong>寄存器地址、读写位、连续读规则和返回字节位置都由具体芯片协议定义，必须查看数据手册和时序图。</div>
+
+          <h3>排查顺序</h3>
+          <ol><li>确认供电、电平和共地正确。</li><li>确认 SCLK、MOSI、MISO 与 CS 没有接反，片选目标正确。</li><li>对照数据手册检查 Mode、位序、每字位数和最高频率。</li><li>从较低时钟开始，用逻辑分析仪观察 CS、时钟边沿和数据位。</li><li>先读取固定芯片 ID 或状态寄存器，再调试复杂连续传输。</li><li>SPI 缺少底层应答；读到全 <code>0x00</code> 或 <code>0xFF</code> 时，仍要检查片选、接线和外设是否真实响应。</li></ol>
+          <p class="muted">依据：Linux Kernel 的 <a href="https://docs.kernel.org/driver-api/spi.html" target="_blank" rel="noreferrer">SPI 驱动接口</a>、<a href="https://docs.kernel.org/6.6/spi/spi-summary.html" target="_blank" rel="noreferrer">SPI 模式说明</a>与 <a href="https://docs.kernel.org/spi/spidev.html" target="_blank" rel="noreferrer">SPI 用户态 API</a>。</p>
+        </section>
+
         <section id="references" class="refs">
           <h2>官方参考资料</h2>
           <ul>
@@ -446,6 +571,9 @@ ros2 bag info &lt;输出数据包&gt;</code></pre>
             <li><a href="https://apollo.baidu.com/docs/apollo/latest/" target="_blank" rel="noreferrer">Apollo 官方文档</a></li>
             <li><a href="https://support.microsoft.com/en-US/Excel/display-numbers-in-scientific-exponential-notation" target="_blank" rel="noreferrer">Microsoft Support：科学计数法显示</a></li>
             <li><a href="https://support.microsoft.com/en-US/Excel/format-numbers-as-text" target="_blank" rel="noreferrer">Microsoft Support：将数字格式设为文本</a></li>
+            <li><a href="https://git-scm.com/docs" target="_blank" rel="noreferrer">Git 官方参考</a></li>
+            <li><a href="https://docs.github.com/en/pull-requests/get-started/pull-request-quickstart" target="_blank" rel="noreferrer">GitHub Docs：Pull Request 快速入门</a></li>
+            <li><a href="https://docs.kernel.org/driver-api/spi.html" target="_blank" rel="noreferrer">Linux Kernel：SPI 驱动接口</a></li>
           </ul>
         </section>
       </article>

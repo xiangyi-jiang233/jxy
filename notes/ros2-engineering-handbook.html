@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="通用工程技术手册：ROS 2、MCAP、Docker、Autoware、Git/GitHub、SPI、场景仿真与数据精度保护。">
+  <meta name="description" content="通用工程技术手册：ROS 2、MCAP、Docker、Autoware、Git/GitHub、SPI、MCP 工具集成、场景仿真与数据精度保护。">
   <meta name="theme-color" content="#14281c">
   <title>ROS 2 与机器人数据工程手册｜Shirley Knowledge</title>
   <style>
@@ -34,7 +34,7 @@
 
     <div class="layout">
       <aside class="toc"><p class="toc-title">手册目录</p><nav>
-        <a href="#ros-graph">01 · ROS 2 图与命令</a><a href="#tf2">02 · TF2</a><a href="#rosbag">03 · rosbag 与 MCAP</a><a href="#mcap-tools">04 · MCAP 工具</a><a href="#mcap-time">05 · 时间与切割</a><a href="#python-cli">06 · Python CLI</a><a href="#docker">07 · Docker 文件流转</a><a href="#links">08 · 路径与软链接</a><a href="#dds">09 · DDS 与 CycloneDDS</a><a href="#middleware">10 · 中间件性能</a><a href="#remote">11 · 远程开发</a><a href="#ai-config">12 · AI 项目配置</a><a href="#autoware-start">13 · Autoware 启动</a><a href="#record-verify">14 · 录制与验证</a><a href="#scenario-package">15 · 场景包与留痕</a><a href="#simulation-consistency">16 · 仿真一致性</a><a href="#excel-long-numbers">17 · Excel 长数字</a><a href="#git-github-workflow">18 · Git 与 GitHub</a><a href="#spi-protocol">19 · SPI 协议</a><a href="#references">官方参考</a>
+        <a href="#ros-graph">01 · ROS 2 图与命令</a><a href="#tf2">02 · TF2</a><a href="#rosbag">03 · rosbag 与 MCAP</a><a href="#mcap-tools">04 · MCAP 工具</a><a href="#mcap-time">05 · 时间与切割</a><a href="#python-cli">06 · Python CLI</a><a href="#docker">07 · Docker 文件流转</a><a href="#links">08 · 路径与软链接</a><a href="#dds">09 · DDS 与 CycloneDDS</a><a href="#middleware">10 · 中间件性能</a><a href="#remote">11 · 远程开发</a><a href="#ai-config">12 · AI 项目配置</a><a href="#autoware-start">13 · Autoware 启动</a><a href="#record-verify">14 · 录制与验证</a><a href="#scenario-package">15 · 场景包与留痕</a><a href="#simulation-consistency">16 · 仿真一致性</a><a href="#excel-long-numbers">17 · Excel 长数字</a><a href="#git-github-workflow">18 · Git 与 GitHub</a><a href="#spi-protocol">19 · SPI 协议</a><a href="#mcp-integration">20 · MCP 工具集成</a><a href="#references">官方参考</a>
       </nav></aside>
 
       <article>
@@ -558,6 +558,75 @@ uint8_t value = rx[1];</code></pre>
           <p class="muted">依据：Linux Kernel 的 <a href="https://docs.kernel.org/driver-api/spi.html" target="_blank" rel="noreferrer">SPI 驱动接口</a>、<a href="https://docs.kernel.org/6.6/spi/spi-summary.html" target="_blank" rel="noreferrer">SPI 模式说明</a>与 <a href="https://docs.kernel.org/spi/spidev.html" target="_blank" rel="noreferrer">SPI 用户态 API</a>。</p>
         </section>
 
+
+        <section id="mcp-integration">
+          <h2>20｜MCP 工具集成与权限边界</h2>
+          <p class="lead">Model Context Protocol（MCP）用统一的客户端—服务器接口，把外部知识、工具和可复用提示接入 AI 应用。它解决的是“如何标准化暴露能力”，不是模型本身。</p>
+
+          <h3>角色与能力</h3>
+          <div class="layers">
+            <div class="layer"><strong>Host</strong><span>承载对话和模型的 AI 应用，管理一个或多个 MCP Client。</span></div>
+            <div class="layer"><strong>Client</strong><span>与某个 MCP Server 建立专用连接，发现并调用其能力。</span></div>
+            <div class="layer"><strong>Server</strong><span>通过标准协议提供工具、资源或提示；既可以在本机运行，也可以作为远程服务运行。</span></div>
+          </div>
+          <table><thead><tr><th>原语</th><th>作用</th><th>典型风险</th></tr></thead><tbody>
+            <tr><td>Tools</td><td>执行构建、查询、写文件、调用 API 等动作。</td><td>可能修改数据、占用资源或操作硬件。</td></tr>
+            <tr><td>Resources</td><td>向模型提供文件、项目状态、文档等上下文。</td><td>可能暴露敏感内容或过期数据。</td></tr>
+            <tr><td>Prompts</td><td>提供可复用的交互模板。</td><td>模板内容仍需审查，不能替代权限控制。</td></tr>
+          </tbody></table>
+
+          <h3>远程文档服务器与本地工具服务器</h3>
+          <table><thead><tr><th>维度</th><th>远程文档 MCP</th><th>本地项目 MCP</th></tr></thead><tbody>
+            <tr><td>主要用途</td><td>搜索官方文档、API、示例和兼容性信息。</td><td>读取项目状态，并执行构建、清理、烧录等动作。</td></tr>
+            <tr><td>常见传输</td><td>Streamable HTTP，经网络连接服务端。</td><td>stdio，由 AI 应用启动本机进程。</td></tr>
+            <tr><td>依赖</td><td>网络、服务可用性、认证和服务配额。</td><td>本机工具链、项目目录、串口和操作系统权限。</td></tr>
+            <tr><td>数据边界</td><td>查询内容会发送到远程服务，应避免附带内部代码或密钥。</td><td>可接触本地文件与设备，应严格限制工作目录和可调用命令。</td></tr>
+          </tbody></table>
+          <div class="note"><strong>以乐鑫为例：</strong>Documentation MCP 负责检索官方资料；ESP-IDF Tools 本地 MCP 把 <code>set-target</code>、<code>build</code>、<code>clean</code>、<code>flash</code> 等项目动作，以及配置、构建状态和串口列表等只读资源暴露给 AI。二者是“知识来源”和“实际执行”的互补关系，不是同一个服务器。</div>
+
+          <h3>是否需要自己写 MCP Server</h3>
+          <ol>
+            <li>先列出任务需要的工具、资源、认证方式和数据边界。</li>
+            <li>优先复用官方或可信的现有服务器，核对来源、版本、许可证和维护状态。</li>
+            <li>只有在现有服务器缺少内部系统接口、专用硬件动作或必要的权限约束时，才实现自定义服务器。</li>
+            <li>自定义工具应保持单一职责，使用明确的输入 Schema，并返回可验证的结构化结果。</li>
+          </ol>
+          <pre><code>{
+  "mcpServers": {
+    "remote-docs": {
+      "url": "&lt;MCP服务地址&gt;"
+    },
+    "local-project": {
+      "command": "&lt;启动命令&gt;",
+      "args": ["&lt;参数1&gt;", "&lt;参数2&gt;"],
+      "env": {
+        "PROJECT_DIR": "&lt;项目目录&gt;"
+      }
+    }
+  }
+}</code></pre>
+
+          <h3>频率限制与失败排查</h3>
+          <div class="flow"><div><strong>识别限制层</strong><small>区分客户端、服务器、认证、网络与本机权限</small></div><div><strong>读取错误证据</strong><small>检查状态码、错误正文、日志和 Retry-After</small></div><div><strong>减少无效调用</strong><small>缓存、合并查询、缩小结果与避免重复检索</small></div><div><strong>按策略重试</strong><small>等待配额窗口，采用指数退避并设置上限</small></div></div>
+          <table><thead><tr><th>现象</th><th>优先检查</th><th>处理方法</th></tr></thead><tbody>
+            <tr><td>HTTP 429 或明确提示 quota</td><td>小时/每日额度、账号身份、响应头。</td><td>停止连续重试，等待窗口恢复；缓存相同查询并合并相近问题。</td></tr>
+            <tr><td>401 / 403</td><td>登录状态、令牌作用域、服务端授权。</td><td>重新认证或申请最小必要权限，不在配置中硬编码密钥。</td></tr>
+            <tr><td>本地服务器无法启动</td><td>启动命令、PATH、依赖、工作目录。</td><td>在终端单独运行启动命令，先修复环境再连接客户端。</td></tr>
+            <tr><td>构建可用但无法烧录</td><td>串口选择、设备连接、驱动和串口权限。</td><td>先列出设备并确认 <code>&lt;串口&gt;</code>，再执行单独的烧录验证。</td></tr>
+          </tbody></table>
+          <div class="note warning"><strong>不要绕过服务限制：</strong>频率限制是服务容量与滥用防护的一部分。不要用多账号、并发轰炸或自动循环规避；若任务需要批量处理，应改用适合自动化的接口或向服务方申请配额。</div>
+
+          <h3>本地执行的安全基线</h3>
+          <ul>
+            <li>把工作目录限制到 <code>&lt;项目目录&gt;</code>，不要默认开放整个主目录或磁盘。</li>
+            <li>对构建、只读状态查询与烧录/擦除使用不同权限；高风险动作执行前要求人工确认。</li>
+            <li>使用命令白名单和结构化参数，避免把任意 Shell 字符串直接交给工具执行。</li>
+            <li>记录工具名、参数摘要、退出码和结果；日志中隐藏令牌、用户名、真实路径和设备标识。</li>
+            <li>烧录后读取项目状态或串口输出进行验证，不能只依据“工具调用成功”。</li>
+          </ul>
+          <p class="muted">参考：<a href="https://modelcontextprotocol.io/docs/learn/architecture" target="_blank" rel="noreferrer">MCP 官方架构说明</a>、<a href="https://mcp.espressif.com/" target="_blank" rel="noreferrer">乐鑫 MCP Servers</a>与 <a href="https://docs.espressif.com/projects/esp-idf/en/release-v6.0/esp32/api-guides/tools/idf-py.html" target="_blank" rel="noreferrer">ESP-IDF Tools 本地 MCP Server</a>。</p>
+        </section>
+
         <section id="references" class="refs">
           <h2>官方参考资料</h2>
           <ul>
@@ -574,6 +643,9 @@ uint8_t value = rx[1];</code></pre>
             <li><a href="https://git-scm.com/docs" target="_blank" rel="noreferrer">Git 官方参考</a></li>
             <li><a href="https://docs.github.com/en/pull-requests/get-started/pull-request-quickstart" target="_blank" rel="noreferrer">GitHub Docs：Pull Request 快速入门</a></li>
             <li><a href="https://docs.kernel.org/driver-api/spi.html" target="_blank" rel="noreferrer">Linux Kernel：SPI 驱动接口</a></li>
+            <li><a href="https://modelcontextprotocol.io/docs/learn/architecture" target="_blank" rel="noreferrer">Model Context Protocol：架构概览</a></li>
+            <li><a href="https://mcp.espressif.com/" target="_blank" rel="noreferrer">Espressif：MCP Servers</a></li>
+            <li><a href="https://docs.espressif.com/projects/esp-idf/en/release-v6.0/esp32/api-guides/tools/idf-py.html" target="_blank" rel="noreferrer">ESP-IDF：Tools 本地 MCP Server</a></li>
           </ul>
         </section>
       </article>

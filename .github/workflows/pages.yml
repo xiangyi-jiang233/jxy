@@ -1,3 +1,4 @@
+# Re-deploy after GitHub account rename (2026-08-18)
 name: Deploy knowledge base to GitHub Pages
 
 on:

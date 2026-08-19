@@ -194,6 +194,24 @@ ip route
 sysctl net.core.rmem_max
 ros2 node list
 ros2 topic list</code></pre>
+
+          <h3 id="qos-compatibility">话题存在但收不到数据：先核对 QoS</h3>
+          <p>ROS 2 端点只有在请求与提供的 QoS 兼容时才会建立通信。因此，“话题能列出来”只证明发现了名称，不证明订阅者一定能收到消息。</p>
+          <pre><code>ros2 topic info &lt;话题名&gt; --verbose
+ros2 node info &lt;节点名&gt;
+
+# 临时订阅测试前先查看本机参数支持
+ros2 topic echo --help
+ros2 topic echo &lt;话题名&gt; --qos-reliability best_effort</code></pre>
+          <table><thead><tr><th>策略</th><th>含义</th><th>常见兼容关系</th></tr></thead><tbody>
+            <tr><td>Reliability</td><td><code>reliable</code> 重试以提高送达保证；<code>best_effort</code> 更重视及时性，可容忍丢包。</td><td>Best Effort 发布者不能满足 Reliable 订阅者；Reliable 发布者可以满足 Best Effort 订阅者。</td></tr>
+            <tr><td>Durability</td><td><code>volatile</code> 只发送当前连接后的样本；<code>transient_local</code> 可为后加入的订阅者保留历史样本。</td><td>Volatile 发布者不能满足要求 Transient Local 的订阅者；反向通常兼容。</td></tr>
+            <tr><td>History / Depth</td><td><code>keep_last</code> 只保留最近 N 条；Depth 决定 N。</td><td>主要影响排队与丢弃行为；队列太小可能丢旧消息，但不能替代 Reliability。</td></tr>
+          </tbody></table>
+          <div class="flow"><div><strong>确认名称与类型</strong><small>排除拼写、命名空间和消息类型错误</small></div><div><strong>查看端点</strong><small>检查发布者、订阅者及各自 QoS</small></div><div><strong>做匹配测试</strong><small>用临时订阅者调整 QoS 验证假设</small></div><div><strong>再查底层</strong><small>确认 DDS、域、网卡、容器和防火墙</small></div></div>
+          <div class="note warning"><strong>当前学习边界：</strong>已掌握检查方法，但尚未记录真实话题的执行输出，因此不能把某次通信异常直接归因为 QoS。必须以 <code>--verbose</code> 的端点信息和匹配试验为证据。</div>
+          <p class="muted">依据：<a href="https://docs.ros.org/en/humble/Concepts/Intermediate/About-Quality-of-Service-Settings.html" target="_blank" rel="noreferrer">ROS 2 Humble QoS 设置</a>与 <a href="https://docs.ros.org/en/humble/Tutorials/Beginner-CLI-Tools/Understanding-ROS2-Topics/Understanding-ROS2-Topics.html" target="_blank" rel="noreferrer">ROS 2 话题检查命令</a>。</p>
+
           <h3>多网卡与自动选择</h3>
           <p>CycloneDDS 会根据接口状态、地址类型和多播能力选择网络接口。存在 Wi-Fi、有线、VPN、容器网桥等多张网卡时，自动选择可能不符合实际通信需求，此时应在配置中明确指定接口。</p>
           <h3>参与者索引耗尽</h3>
@@ -227,6 +245,33 @@ pwd
 cat /etc/os-release
 printenv | grep -i proxy</code></pre>
           <div class="note"><strong>代理原则：</strong><code>127.0.0.1</code> 永远表示“当前这台机器自己”。本地电脑的代理不会自动变成远程主机或容器的代理。</div>
+
+          <h3 id="remote-transfer">SSH、SCP 与虚拟组网的边界</h3>
+          <p>NoMachine 等远程桌面工具提供图形交互，但不替代底层网络可达性；SCP 通过 SSH 连接传输文件，而虚拟组网工具只负责建立跨网络的私有可达链路。排障时必须把三层分开。</p>
+          <div class="flow"><div><strong>虚拟组网</strong><small>设备是否在线、是否获得组网地址</small></div><div><strong>SSH 服务</strong><small>服务是否运行、端口是否监听</small></div><div><strong>身份与路径</strong><small>用户、目标主机和源/目标路径</small></div><div><strong>文件落点</strong><small>宿主机、挂载目录还是容器内部</small></div></div>
+          <pre><code># 虚拟组网状态
+systemctl status tailscaled --no-pager
+tailscale status
+tailscale ip -4
+
+# SSH 服务端检查
+systemctl status ssh --no-pager
+ss -lntp | grep ':22'
+
+# 上传、下载与目录复制
+scp &lt;本地文件&gt; &lt;用户名&gt;@&lt;IP地址&gt;:&lt;远端目录&gt;/
+scp &lt;用户名&gt;@&lt;IP地址&gt;:"&lt;远端文件路径&gt;" &lt;本地目录&gt;/
+scp -r &lt;本地目录&gt; &lt;用户名&gt;@&lt;IP地址&gt;:&lt;远端目录&gt;/</code></pre>
+          <ul>
+            <li><code>scp</code> 第一个路径是源，第二个路径是目标；<code>-r</code> 用于递归复制目录。</li>
+            <li>远端路径包含空格时，应引用完整的远端参数，并在传输后核对文件大小和位置。</li>
+            <li>SCP 传到的是远程宿主机，不会自动进入该主机上的 Docker 容器；下一步应使用绑定挂载或 <code>docker cp</code>。</li>
+            <li>Tailscale CLI 无法连接本地 daemon、或 socket 不存在时，先检查 <code>tailscaled</code> 服务与安装来源；同一系统避免同时保留 Snap、APT 等多套安装。</li>
+            <li>统一排查顺序：当前终端与设备 → 文件和命令 → 服务和进程 → 权限与网络 → 最后修改配置。</li>
+          </ul>
+          <div class="note"><strong>传输后验证：</strong>分别在源端和目标端使用 <code>ls -lh</code> 或 <code>stat</code> 核对文件；如果还需进入容器，再按“宿主机路径 → 容器路径”单独验证，不能混用两套路径。</div>
+          <p class="muted">参考：<a href="https://man.openbsd.org/scp.1" target="_blank" rel="noreferrer">OpenSSH scp 手册</a>、<a href="https://tailscale.com/docs/reference/tailscale-cli" target="_blank" rel="noreferrer">Tailscale CLI</a>与 <a href="https://tailscale.com/docs/reference/tailscaled" target="_blank" rel="noreferrer">tailscaled daemon</a>。</p>
+
           <h3>代理开启时访问内网服务</h3>
           <p>内网、虚拟组网或本地开发服务通常不应绕到公网代理。通用做法是在代理客户端中建立直连规则，并确保它们排在兜底代理规则之前。</p>
           <ol><li>先判断目标是域名还是 IP；域名还要确认最终解析地址。</li><li>对私有地址段或内部域名后缀配置 <code>DIRECT</code>，不要只为单个完整 URL 写临时规则。</li><li>规则顺序遵循“更具体的直连规则在前，最终 <code>MATCH</code> / 默认代理在后”。</li><li>若客户端启用 TUN、Fake-IP 或远程 DNS，需同时检查 DNS 解析和路由结果。</li><li>修改后分别用域名和解析后的 IP 测试，确认请求没有被错误送入代理。</li></ol>
@@ -279,6 +324,46 @@ ros2 launch autoware_launch planning_simulator.launch.xml \
             <tr><td>车辆/传感器模型</td><td>选择与运行场景匹配的参数、接口和坐标配置集合。</td><td>模型名存在，但与实际话题或标定不匹配。</td></tr>
           </tbody></table>
           <div class="note"><strong>挂载配置：</strong>源码、地图或参数目录通过绑定挂载进入容器时，修改挂载源配置后通常需要重新创建容器；仅重启旧容器不会自动应用新的挂载定义。</div>
+
+          <h3 id="workspace-version-build">版本清单导入与 colcon 编译</h3>
+          <p>制作可复现的 Autoware 场景包时，必须把“当前版本、目标版本、源码清单、编译结果、重跑结果”分开记录。仅切换目录名或只看到脚本启动，不足以证明版本适配完成。</p>
+          <h3>用 vcstool 导入多个仓库清单</h3>
+          <pre><code># 每份清单是一次独立命令
+vcs validate &lt; &lt;仓库清单1.repos&gt;
+vcs import &lt;源码目录&gt; --recursive &lt; &lt;仓库清单1.repos&gt;
+
+vcs validate &lt; &lt;仓库清单2.repos&gt;
+vcs import &lt;源码目录&gt; --recursive &lt; &lt;仓库清单2.repos&gt;
+
+# 保存精确版本，便于复现
+vcs export --exact &lt;源码目录&gt; &gt; &lt;锁定清单.repos&gt;</code></pre>
+          <div class="note warning"><strong>典型语法错误：</strong>把两条 <code>vcs import</code> 直接写在同一条命令里，会让第二个 <code>vcs import ...</code> 被当作第一条命令的多余参数，从而出现 <code>unrecognized arguments</code>。应换行执行，或在确实需要串联时使用 <code>&amp;&amp;</code>。</div>
+          <p><code>&lt;</code> 是 Shell 的标准输入重定向，只把一份清单交给当前命令。它不会自动分隔后续命令，也不能证明所有仓库都已导入成功；完成后仍需检查失败项和实际版本。</p>
+
+          <h3>编译与验收</h3>
+          <pre><code>source /opt/ros/&lt;发行版&gt;/setup.bash
+cd &lt;Autoware工作空间&gt;
+
+# 全量工作空间构建示例
+colcon build --symlink-install \
+  --cmake-args -DCMAKE_BUILD_TYPE=Release \
+  --packages-skip &lt;跳过包1&gt; &lt;跳过包2&gt;
+
+# 只构建目标包及其依赖
+colcon build --symlink-install --packages-up-to &lt;目标包&gt;
+
+# 构建后加载并验证
+source install/setup.bash
+ros2 pkg prefix &lt;关键包名&gt;</code></pre>
+          <ol>
+            <li>编译前记录仓库清单、分支或提交，确认依赖已完整导入。</li>
+            <li><code>--symlink-install</code> 尽可能用符号链接安装，便于开发迭代；<code>--cmake-args</code> 把参数传给 CMake 包。</li>
+            <li><code>--packages-up-to</code> 构建目标包及其依赖；<code>--packages-skip</code> 只应跳过已确认非必需或当前环境无法支持的包。</li>
+            <li>判断成败应看最终 Summary、失败包和退出状态；出现 stderr 不一定等于整个工作空间失败，但必须阅读内容。</li>
+            <li>编译成功后重新加载 <code>install/setup.bash</code>，再检查关键包、启动文件和场景重跑结果。</li>
+          </ol>
+          <p class="muted">参考：<a href="https://github.com/dirk-thomas/vcstool" target="_blank" rel="noreferrer">vcstool</a>、<a href="https://colcon.readthedocs.io/en/released/reference/verb/build.html" target="_blank" rel="noreferrer">colcon build</a>与 <a href="https://colcon.readthedocs.io/en/released/user/how-to.html" target="_blank" rel="noreferrer">colcon 包选择方法</a>。</p>
+
         </section>
 
         <section id="record-verify">
@@ -331,6 +416,38 @@ ros2 bag info &lt;输出数据包&gt;</code></pre>
           <h3>可复现记录模板</h3>
           <ol><li><strong>目标：</strong>本次要复现或验证什么。</li><li><strong>环境：</strong>软件版本、容器镜像或分支；不记录账号和密钥。</li><li><strong>原始数据：</strong>时长、时间范围、关键话题和消息数。</li><li><strong>配置：</strong>地图、模型、时间窗口及输入输出参数。</li><li><strong>执行：</strong>关键命令、脚本版本和必要日志。</li><li><strong>结果：</strong>产物名称、大小、生成时间及完整性检查。</li><li><strong>问题与验证：</strong>出现了什么、如何处理、处理后如何证明有效。</li></ol>
           <div class="note"><strong>防止误判旧文件：</strong>同时检查文件名、修改时间、大小和元信息。若输出目录中已有同名产物，应明确覆盖策略或先使用新的输出名称。</div>
+
+          <h3 id="issue-classification">按最早可证实的异常环节分类 Issue</h3>
+          <p>同一个场景可能同时表现为“目标识别异常”和“车辆没有正确避让”。主分类不应由最终碰撞或截图观感决定，而应沿数据链找到最先出现、且有消息或回放证据支持的异常环节。</p>
+          <table><thead><tr><th>证据</th><th>主分类</th><th>判断</th></tr></thead><tbody>
+            <tr><td>真实目标未出现在感知输出，或类别、位置、尺寸、跟踪明显错误。</td><td>感知异常</td><td>规划接收到的上游输入已经不正确。</td></tr>
+            <tr><td>感知输出中的目标正确、稳定，规划路径却未避让、避让过晚或方式不合理。</td><td>避障/规划异常</td><td>输入基本正确，异常首先出现在行为或路径输出。</td></tr>
+            <tr><td>感知与规划均出现可疑现象，但证据不足以确定先后。</td><td>待确认</td><td>保留两个候选分类，补充关键话题和时间线后再定主类。</td></tr>
+          </tbody></table>
+          <h3>分类 Issue 的最小结构</h3>
+          <ol>
+            <li><strong>背景与场景：</strong>发生了什么，测试目标是什么。</li>
+            <li><strong>输入数据：</strong>数据范围、关键话题、软件版本和配置摘要。</li>
+            <li><strong>预期与实际：</strong>系统应如何响应，实际输出有什么差异。</li>
+            <li><strong>时间线证据：</strong>在同一时间轴上排列感知结果、规划路径和车辆状态。</li>
+            <li><strong>分类依据：</strong>指出最早异常环节及支持它的消息、截图或日志；下游影响写作关联现象。</li>
+            <li><strong>测试结论与产物：</strong>说明已验证、尚未确认的内容，以及场景包或报告位置。</li>
+          </ol>
+          <div class="note warning"><strong>不要把未确认写成结论：</strong>若尚未记录具体场景的关键话题、版本、生成结果或重跑结果，只能记录判断方法和待验证项，不能声称场景包制作或分类已经完成。</div>
+
+          <h3 id="scenario-rerun">场景重跑脚本的正确理解</h3>
+          <p><code>&lt;场景重跑脚本&gt; rerun</code> 只能确认它是项目提供的重跑入口，不能仅凭名称断定内部一定执行了 rosbag 回放、仿真启动或某个数据源。应结合脚本帮助、配置和实际输出判断。</p>
+          <pre><code>cd &lt;场景工具目录&gt;
+&lt;场景重跑脚本&gt; rerun
+
+# 运行记录至少保留
+当前/目标版本：&lt;版本或提交&gt;
+输入场景包：&lt;场景包路径&gt;
+关键配置：&lt;配置摘要&gt;
+运行结果：&lt;退出状态和关键日志&gt;
+验证结论：&lt;复现/未复现/待确认&gt;</code></pre>
+          <p>版本适配 Issue 应保留“现象 → 判断 → 调整 → 结果”的因果链，并区分脚本启动成功、场景运行成功和目标问题成功复现这三个不同层级。</p>
+
           <h3 id="parameter-tuning-record">把调参过程写成可复现的实验</h3>
           <p>调参耗时很长，不代表 Issue 需要写成操作流水。真正有学习价值的是说明：为什么改、只改了什么、观察到什么、因此保留还是回退。</p>
           <div class="flow"><div><strong>建立基线</strong><small>保存初始配置和可复现现象</small></div><div><strong>提出假设</strong><small>说明某参数可能影响什么</small></div><div><strong>单变量试验</strong><small>其余条件保持不变</small></div><div><strong>证据化结论</strong><small>保留、回退或继续验证</small></div></div>
@@ -653,6 +770,11 @@ uint8_t value = rx[1];</code></pre>
           <ul>
             <li><a href="https://docs.ros.org/en/humble/Tutorials/Beginner-CLI-Tools/Understanding-ROS2-Nodes/Understanding-ROS2-Nodes.html" target="_blank" rel="noreferrer">ROS 2 Humble：理解节点</a></li>
             <li><a href="https://docs.ros.org/en/humble/Concepts/Basic/Interfaces-Topics-Services-Actions.html" target="_blank" rel="noreferrer">ROS 2：Topics、Services 与 Actions</a></li>
+            <li><a href="https://docs.ros.org/en/humble/Concepts/Intermediate/About-Quality-of-Service-Settings.html" target="_blank" rel="noreferrer">ROS 2 Humble：QoS 设置</a></li>
+            <li><a href="https://github.com/dirk-thomas/vcstool" target="_blank" rel="noreferrer">vcstool：多仓库导入与导出</a></li>
+            <li><a href="https://colcon.readthedocs.io/en/released/reference/verb/build.html" target="_blank" rel="noreferrer">colcon：build 参考</a></li>
+            <li><a href="https://man.openbsd.org/scp.1" target="_blank" rel="noreferrer">OpenSSH：scp 手册</a></li>
+            <li><a href="https://tailscale.com/docs/reference/tailscale-cli" target="_blank" rel="noreferrer">Tailscale：CLI 参考</a></li>
             <li><a href="https://docs.ros.org/en/humble/Tutorials/Ros2bag/Recording-And-Playing-Back-Data.html" target="_blank" rel="noreferrer">ROS 2 Humble：录制与回放数据</a></li>
             <li><a href="https://docs.ros.org/en/humble/p/tf2_ros/" target="_blank" rel="noreferrer">ROS 2 Humble：tf2_ros</a></li>
             <li><a href="https://mcap.dev/guides/cli" target="_blank" rel="noreferrer">MCAP 官方 CLI 指南</a></li>

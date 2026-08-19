@@ -393,10 +393,10 @@
               <div class="card-meta"><span>路径 · 链接 · 定位</span><a class="arrow" href="notes/ros2-engineering-handbook.html#links">阅读 →</a></div>
             </article>
 
-            <article class="card searchable" data-keywords="dds rmw cyclonedds qos discovery network interface 通信 中间件">
+            <article class="card searchable" data-keywords="dds rmw cyclonedds qos reliability best effort durability transient local volatile history depth topic info verbose discovery network interface 通信 中间件 可靠性 持久性 队列">
               <span class="tag">通信中间件</span>
               <h3>DDS、RMW 与 CycloneDDS</h3>
-              <p>理解 ROS 2 通信分层、发现机制、QoS 和多网卡选择，建立由上到下的排障顺序。</p>
+              <p>理解 ROS 2 通信分层、QoS 请求/提供兼容性和多网卡选择，定位“话题存在但收不到数据”。</p>
               <div class="card-meta"><span>分层 · QoS · 网络</span><a class="arrow" href="notes/ros2-engineering-handbook.html#dds">阅读 →</a></div>
             </article>
 
@@ -407,16 +407,16 @@
               <div class="card-meta"><span>指标 · 变量 · 基准测试</span><a class="arrow" href="notes/ros2-engineering-handbook.html#middleware">阅读 →</a></div>
             </article>
 
-            <article class="card searchable" data-keywords="remote development ssh shell container ai config instruction 远程 开发 环境 配置">
+            <article class="card searchable" data-keywords="remote development ssh scp tailscale tailscaled nomachine shell container transfer socket daemon ai config instruction 远程 开发 文件传输 虚拟组网 环境 配置">
               <span class="tag">开发环境</span>
               <h3>远程环境与 AI 项目配置</h3>
-              <p>先识别命令实际运行的位置，再用项目级规则记录通用约定、验证方法和安全边界。</p>
+              <p>先识别本地、远程主机和容器，再排查虚拟组网、SSH/SCP、文件落点和项目级配置。</p>
               <div class="card-meta"><span>环境 · 约定 · 验证</span><a class="arrow" href="notes/ros2-engineering-handbook.html#remote">阅读 →</a></div>
             </article>
-            <article class="card searchable" data-keywords="autoware docker launch setup bash map vehicle sensor model 启动 地图 模型">
+            <article class="card searchable" data-keywords="autoware docker launch setup bash map vehicle sensor model vcstool vcs import repos colcon build symlink packages skip up-to 编译 版本 清单 启动 地图 模型">
               <span class="tag">Autoware</span>
               <h3>容器启动与分层验证</h3>
-              <p>从容器、环境、软件包、地图和模型逐层验证，定位启动失败真正发生在哪一层。</p>
+              <p>从容器和环境检查扩展到仓库清单导入、colcon 编译、地图模型与启动结果的分层验证。</p>
               <div class="card-meta"><span>环境 · 资源 · 启动</span><a class="arrow" href="notes/ros2-engineering-handbook.html#autoware-start">阅读 →</a></div>
             </article>
 
@@ -427,10 +427,10 @@
               <div class="card-meta"><span>选择 · 录制 · 验收</span><a class="arrow" href="notes/ros2-engineering-handbook.html#record-verify">阅读 →</a></div>
             </article>
 
-            <article class="card searchable" data-keywords="scenario package reproducible issue output verify parameter tuning baseline hypothesis experiment rollback 场景包 配置 留痕 复现 调参 基线 假设 单变量 回退">
+            <article class="card searchable" data-keywords="scenario package reproducible issue classification perception planning avoidance rerun output verify parameter tuning baseline hypothesis experiment rollback 场景包 分类 感知 规划 避障 重跑 配置 留痕 复现 调参 基线 假设 单变量 回退">
               <span class="tag">工程闭环</span>
               <h3>场景包制作与可复现留痕</h3>
-              <p>把原始数据、配置、调参假设、对照试验和验证证据组织成可检查、可复现的完整闭环。</p>
+              <p>用最早可证实的异常环节完成分类，并把重跑、配置、调参和验证证据组织成可复现闭环。</p>
               <div class="card-meta"><span>配置 · 产物 · 证据</span><a class="arrow" href="notes/ros2-engineering-handbook.html#scenario-package">阅读 →</a></div>
             </article>
 

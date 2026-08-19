@@ -481,6 +481,27 @@ git commit -m "feat: describe the change"
 git push -u origin &lt;功能分支&gt;</code></pre>
           <ol><li>从最新默认分支创建独立功能分支。</li><li>每个提交只表达一个清晰目的，提交前检查暂存差异。</li><li>推送分支后在 GitHub 创建 Pull Request。</li><li>通过评审和检查后合并，避免直接在默认分支堆积未经验证的修改。</li></ol>
 
+
+          <h3>账号或仓库改名后 GitHub Pages 无法访问</h3>
+          <p>账号或仓库名称变化会同时影响仓库命名空间、默认 Pages 地址、外部链接和本地远端配置。普通仓库链接通常会自动重定向，但 Pages 地址和写死的旧名称仍应逐项核对。</p>
+          <div class="flow"><div><strong>确认新地址</strong><small>检查新 owner、仓库名和 Pages URL</small></div><div><strong>检查发布配置</strong><small>核对 Settings → Pages 的来源</small></div><div><strong>检查工作流</strong><small>查看最新 Actions 构建与部署结果</small></div><div><strong>触发并验证</strong><small>重新部署后访问新地址和关键页面</small></div></div>
+          <pre><code># 本地仓库仍指向旧账号或旧仓库名时
+git remote -v
+git remote set-url origin https://github.com/&lt;新用户名&gt;/&lt;仓库名&gt;.git
+git remote -v
+
+# 如果工作流声明了 workflow_dispatch，可在 GitHub Actions 页面手动运行
+# 如果使用分支作为发布源，向该发布分支提交后会创建新部署</code></pre>
+          <ol>
+            <li>先打开 <code>https://github.com/&lt;新用户名&gt;/&lt;仓库名&gt;</code>，确认仓库已位于新命名空间。</li>
+            <li>项目站点通常使用 <code>https://&lt;新用户名&gt;.github.io/&lt;仓库名&gt;/</code>；同时搜索 README、HTML、配置文件和工作流中是否仍写着旧用户名或旧 URL。</li>
+            <li>在仓库 Pages 设置中确认发布源：GitHub Actions 或指定分支/目录，并检查是否仍处于已发布状态。</li>
+            <li>查看 Actions 中最近一次构建和部署。失败时先读具体步骤日志，不要仅凭网页 404 判断源码有问题。</li>
+            <li>需要重新部署时，优先重新运行支持 <code>workflow_dispatch</code> 的工作流；分支发布则提交到发布源。重新部署后检查首页、子页面、静态资源和页内链接。</li>
+            <li>若使用自定义域名，还要核对 DNS、仓库中的 <code>CNAME</code> 和 HTTPS 状态是否指向新命名空间。</li>
+          </ol>
+          <div class="note"><strong>区分重定向与修复：</strong>旧仓库链接暂时能跳转，不代表配置已更新。GitHub 建议改名后更新本地 remote；Pages 恢复则要以成功部署记录和新 URL 实际可访问为准。</div>
+
           <h3>连接 GitHub 失败时的代理判断</h3>
           <pre><code>git config --global --get http.proxy
 git config --global --get https.proxy
@@ -498,7 +519,7 @@ git config --global --unset https.proxy</code></pre>
             <li>Git 若运行在容器、虚拟机、WSL 或远程主机中，它们的 <code>127.0.0.1</code> 指向各自环境；此时应确认代理监听地址、端口、防火墙和宿主机可达地址。</li>
             <li><code>Failed to connect to github.com:443</code> 只能说明 HTTPS 连接未建立，仍需分别检查 DNS、路由、代理是否监听以及 Git 代理配置。</li>
           </ul>
-          <p class="muted">依据：<a href="https://git-scm.com/docs" target="_blank" rel="noreferrer">Git 官方参考</a>、<a href="https://git-scm.com/docs/git-status" target="_blank" rel="noreferrer">git status</a>、<a href="https://docs.github.com/en/pull-requests/get-started/pull-request-quickstart" target="_blank" rel="noreferrer">GitHub Pull Request 快速入门</a>。</p>
+          <p class="muted">依据：<a href="https://git-scm.com/docs" target="_blank" rel="noreferrer">Git 官方参考</a>、<a href="https://git-scm.com/docs/git-status" target="_blank" rel="noreferrer">git status</a>、<a href="https://docs.github.com/en/pull-requests/get-started/pull-request-quickstart" target="_blank" rel="noreferrer">GitHub Pull Request 快速入门</a>、<a href="https://docs.github.com/en/account-and-profile/concepts/username-changes" target="_blank" rel="noreferrer">GitHub 用户名变更</a>与 <a href="https://docs.github.com/en/actions/how-tos/manage-workflow-runs" target="_blank" rel="noreferrer">工作流运行管理</a>。</p>
         </section>
 
         <section id="spi-protocol">
@@ -642,6 +663,8 @@ uint8_t value = rx[1];</code></pre>
             <li><a href="https://support.microsoft.com/en-US/Excel/format-numbers-as-text" target="_blank" rel="noreferrer">Microsoft Support：将数字格式设为文本</a></li>
             <li><a href="https://git-scm.com/docs" target="_blank" rel="noreferrer">Git 官方参考</a></li>
             <li><a href="https://docs.github.com/en/pull-requests/get-started/pull-request-quickstart" target="_blank" rel="noreferrer">GitHub Docs：Pull Request 快速入门</a></li>
+            <li><a href="https://docs.github.com/en/account-and-profile/concepts/username-changes" target="_blank" rel="noreferrer">GitHub Docs：用户名变更</a></li>
+            <li><a href="https://docs.github.com/en/actions/how-tos/manage-workflow-runs" target="_blank" rel="noreferrer">GitHub Docs：管理工作流运行</a></li>
             <li><a href="https://docs.kernel.org/driver-api/spi.html" target="_blank" rel="noreferrer">Linux Kernel：SPI 驱动接口</a></li>
             <li><a href="https://modelcontextprotocol.io/docs/learn/architecture" target="_blank" rel="noreferrer">Model Context Protocol：架构概览</a></li>
             <li><a href="https://mcp.espressif.com/" target="_blank" rel="noreferrer">Espressif：MCP Servers</a></li>

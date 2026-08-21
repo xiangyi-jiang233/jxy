@@ -417,6 +417,36 @@ ros2 bag info &lt;输出数据包&gt;</code></pre>
           <ol><li><strong>目标：</strong>本次要复现或验证什么。</li><li><strong>环境：</strong>软件版本、容器镜像或分支；不记录账号和密钥。</li><li><strong>原始数据：</strong>时长、时间范围、关键话题和消息数。</li><li><strong>配置：</strong>地图、模型、时间窗口及输入输出参数。</li><li><strong>执行：</strong>关键命令、脚本版本和必要日志。</li><li><strong>结果：</strong>产物名称、大小、生成时间及完整性检查。</li><li><strong>问题与验证：</strong>出现了什么、如何处理、处理后如何证明有效。</li></ol>
           <div class="note"><strong>防止误判旧文件：</strong>同时检查文件名、修改时间、大小和元信息。若输出目录中已有同名产物，应明确覆盖策略或先使用新的输出名称。</div>
 
+
+          <h3 id="scenario-extra-topics">从 MCAP 选择额外话题并重制场景包</h3>
+          <p>配置额外话题时，应先从输入 MCAP 的真实 channel 中选择，而不是凭记忆填写。这样可以同时避免话题名拼写错误、数据包中不存在该话题，以及选中了消息数为 0 的 channel。</p>
+          <div class="flow"><div><strong>检查输入</strong><small>列出话题、类型和消息数</small></div><div><strong>编辑配置</strong><small>按 YAML 列表加入额外话题</small></div><div><strong>重新生成</strong><small>保存命令、退出状态和关键日志</small></div><div><strong>检查输出</strong><small>确认话题真正进入新产物</small></div></div>
+          <pre><code># 1. 从原始文件确认可用话题
+mcap info &lt;原始.mcap&gt;
+
+# 2. 备份并编辑平台配置
+cp &lt;平台配置文件.yaml&gt; &lt;平台配置文件.yaml.bak&gt;
+vim &lt;平台配置文件.yaml&gt;
+
+# Vim 中的最小操作
+:set number       # 显示行号
+:&lt;行号&gt;           # 跳到指定行
+i                 # 进入插入模式
+Esc               # 回到普通模式
+:wq               # 保存并退出
+:q!               # 放弃未保存修改并退出，仅在确定不要修改时使用</code></pre>
+          <p>YAML 列表中的每个话题独占一行，并保持与相邻配置一致的缩进：</p>
+          <pre><code>extra_topics:
+  - &lt;额外话题1&gt;
+  - &lt;额外话题2&gt;</code></pre>
+          <ol>
+            <li>从 <code>mcap info</code> 的 channels 中选择确实存在、消息数大于 0 且与复现目标相关的话题。</li>
+            <li>修改前备份配置；编辑后重新打开相关片段，确认键名、冒号、短横线和缩进没有被破坏。</li>
+            <li>运行 <code>&lt;场景包生成脚本&gt; &lt;生成子命令&gt;</code>，记录退出状态和关键日志。</li>
+            <li>对新产物再次执行 <code>mcap info &lt;输出.mcap&gt;</code>，核对新增话题及消息数。</li>
+          </ol>
+          <div class="note warning"><strong>区分两个成功：</strong>生成脚本无报错只证明配置语法被接受、流程完成；只有输出数据中存在目标话题且消息数合理，才能证明额外话题已被正确打包。</div>
+
           <h3 id="issue-classification">按最早可证实的异常环节分类 Issue</h3>
           <p>同一个场景可能同时表现为“目标识别异常”和“车辆没有正确避让”。主分类不应由最终碰撞或截图观感决定，而应沿数据链找到最先出现、且有消息或回放证据支持的异常环节。</p>
           <table><thead><tr><th>证据</th><th>主分类</th><th>判断</th></tr></thead><tbody>
@@ -778,6 +808,8 @@ uint8_t value = rx[1];</code></pre>
             <li><a href="https://docs.ros.org/en/humble/Tutorials/Ros2bag/Recording-And-Playing-Back-Data.html" target="_blank" rel="noreferrer">ROS 2 Humble：录制与回放数据</a></li>
             <li><a href="https://docs.ros.org/en/humble/p/tf2_ros/" target="_blank" rel="noreferrer">ROS 2 Humble：tf2_ros</a></li>
             <li><a href="https://mcap.dev/guides/cli" target="_blank" rel="noreferrer">MCAP 官方 CLI 指南</a></li>
+            <li><a href="https://vimhelp.org/options.txt.html#%27number%27" target="_blank" rel="noreferrer">Vim 参考：行号选项</a></li>
+            <li><a href="https://vimhelp.org/editing.txt.html#write-quit" target="_blank" rel="noreferrer">Vim 参考：保存与退出</a></li>
             <li><a href="https://docs.docker.com/reference/cli/docker/container/cp/" target="_blank" rel="noreferrer">Docker 官方：docker cp</a></li>
             <li><a href="https://cyclonedds.io/docs/cyclonedds/latest/config/" target="_blank" rel="noreferrer">CycloneDDS 官方配置指南</a></li>
             <li><a href="https://apollo.baidu.com/docs/apollo/latest/" target="_blank" rel="noreferrer">Apollo 官方文档</a></li>

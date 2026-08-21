@@ -17,7 +17,7 @@
 - DDS、RMW、CycloneDDS、QoS 兼容性与分层排障
 - Docker 中启动 Autoware、vcstool 版本清单与 colcon 编译
 - ROS 2 选择性录制与结果验收
-- 场景包制作、感知/规划异常分类、重跑验证与可复现留痕
+- 场景包制作、MCAP 额外话题配置、感知/规划异常分类、重跑验证与可复现留痕
 - 实车回放与闭环仿真一致性分析
 - Excel 长数字、科学计数法与精度保护
 - Git 命令、分支协作、GitHub Pages 重部署与代理排障

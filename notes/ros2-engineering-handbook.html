@@ -297,8 +297,8 @@ scp -r &lt;本地目录&gt; &lt;用户名&gt;@&lt;IP地址&gt;:&lt;远端目录&
         </section>
 
         <section id="autoware-start">
-          <h2>13｜Docker 中启动 Autoware：分层验证</h2>
-          <p class="lead">稳定启动不是背下一条长命令，而是逐层证明容器、环境、软件包、地图和模型配置都正确。</p>
+          <h2>13｜Autoware 架构、源码定位与启动验证</h2>
+          <p class="lead">先用分层架构理解数据如何流动，再定位到具体 ROS 2 包阅读接口与源码；启动时则逐层证明容器、环境、资源和配置正确。</p>
           <div class="flow"><div><strong>确认容器</strong><small>目标容器处于运行状态</small></div><div><strong>加载环境</strong><small>先 ROS 2，再 Autoware 工作空间</small></div><div><strong>核对资源</strong><small>软件包、地图入口与模型存在</small></div><div><strong>启动并验证</strong><small>观察进程、节点、话题与界面</small></div></div>
           <pre><code># 宿主机
 docker ps --filter name=&lt;容器名&gt;
@@ -324,6 +324,60 @@ ros2 launch autoware_launch planning_simulator.launch.xml \
             <tr><td>车辆/传感器模型</td><td>选择与运行场景匹配的参数、接口和坐标配置集合。</td><td>模型名存在，但与实际话题或标定不匹配。</td></tr>
           </tbody></table>
           <div class="note"><strong>挂载配置：</strong>源码、地图或参数目录通过绑定挂载进入容器时，修改挂载源配置后通常需要重新创建容器；仅重启旧容器不会自动应用新的挂载定义。</div>
+
+
+          <h3 id="autoware-architecture-source-reading">从分层架构定位到具体源码包</h3>
+          <p>Autoware 采用分层、组件化架构。官方架构视图包含七个功能栈；它们通过 ROS 2 接口协作，因此排障时既要知道异常属于哪一层，也要沿话题和 TF 检查层间输入输出。</p>
+          <table><thead><tr><th>功能栈</th><th>主要职责</th><th>场景复现时关注</th></tr></thead><tbody>
+            <tr><td>Sensing</td><td>接入并预处理相机、LiDAR、雷达、GNSS、IMU 等传感器数据。</td><td>时间戳、坐标系、数据频率和驱动状态。</td></tr>
+            <tr><td>Map</td><td>提供道路语义、车道几何及可选的点云地图。</td><td>地图版本、坐标基准、车道关系和地图入口。</td></tr>
+            <tr><td>Localization</td><td>估计车辆位姿、速度和运动状态。</td><td>初始位姿、定位跳变、速度与 TF 连续性。</td></tr>
+            <tr><td>Perception</td><td>从传感器数据提取目标、障碍物、交通信号等环境语义。</td><td>目标是否存在、类别/位置/尺寸/预测是否正确。</td></tr>
+            <tr><td>Planning</td><td>根据路线、地图、车辆状态和环境信息生成行为路径与轨迹。</td><td>模块状态、候选路径、安全检查、批准/取消原因。</td></tr>
+            <tr><td>Control</td><td>跟踪规划轨迹并生成纵向、横向控制指令。</td><td>轨迹误差、控制延迟、转向和加减速响应。</td></tr>
+            <tr><td>Vehicle Interface</td><td>连接通用控制命令与具体车辆底盘，并回传车辆状态。</td><td>命令是否下发、执行器状态、限幅和反馈。</td></tr>
+          </tbody></table>
+          <div class="note"><strong>不要把七层当成单向直线：</strong>地图会同时服务定位、感知和规划，车辆状态也会反馈给定位与控制。七层更适合用来界定职责和接口，而不是代替实际 ROS 2 计算图。</div>
+
+          <h3>用目录结构判断真正的 ROS 2 包根目录</h3>
+          <p>按关键词搜索时，结果可能同时包含功能分组目录、包根目录、头文件命名空间目录和文档目录。不能看到名字相似就直接修改；应选择同时包含 <code>package.xml</code>、构建文件和源码目录的候选项。</p>
+          <pre><code># 搜索名称包含关键词的目录
+find &lt;Autoware源码目录&gt; -type d -name "*&lt;包关键词&gt;*" 2&gt;/dev/null
+
+# 逐个检查候选目录
+cd &lt;候选目录&gt;
+ls
+
+# 读取入口文档与依赖
+sed -n '1,220p' README.md
+sed -n '1,220p' package.xml
+
+# 建立目录级文件清单
+find launch config src include test -maxdepth 2 -type f 2&gt;/dev/null | sort</code></pre>
+          <table><thead><tr><th>文件或目录</th><th>阅读目的</th></tr></thead><tbody>
+            <tr><td><code>README.md</code> / <code>docs/</code></td><td>先了解模块目标、输入输出、限制和使用方式。</td></tr>
+            <tr><td><code>package.xml</code></td><td>确认 ROS 2 包名、构建类型和依赖关系。</td></tr>
+            <tr><td><code>CMakeLists.txt</code></td><td>查看可执行文件、库、组件注册和安装规则。</td></tr>
+            <tr><td><code>launch/</code></td><td>找到实际启动入口、组合方式及加载的参数文件。</td></tr>
+            <tr><td><code>config/</code></td><td>查看 YAML 参数、模块开关和默认阈值；修改前先理解参数作用。</td></tr>
+            <tr><td><code>include/</code></td><td>阅读公开类、接口、数据结构和模块边界。</td></tr>
+            <tr><td><code>src/</code></td><td>追踪节点初始化、订阅发布、状态更新和核心算法实现。</td></tr>
+            <tr><td><code>test/</code></td><td>从测试用例理解边界条件、预期行为和已有回归保护。</td></tr>
+            <tr><td><code>CHANGELOG.rst</code></td><td>识别版本间行为、参数或接口变化。</td></tr>
+          </tbody></table>
+          <p><strong>推荐阅读顺序：</strong>先看 README 和官方文档建立功能模型，再看 <code>package.xml</code> 与 <code>launch/config</code> 确认运行边界，之后沿输入输出进入 <code>include/src</code>，最后用测试和变更记录校验理解。</p>
+
+          <h3>Behavior Path Planner 在规划栈中的位置</h3>
+          <p><code>behavior_path_planner</code> 属于行为规划：它根据路线、地图、车辆状态和周围目标选择合适的场景模块，生成行为路径、可行驶区域和转向灯命令。典型场景模块包括车道跟随、变道、静态障碍物避让、起步和目标停车。</p>
+          <p>Planner Manager 负责激活适合当前场景的模块、管理多个模块的执行顺序，并把模块输出组织为可执行路径。调试“变道没有触发或时机不一致”时，应同时检查：</p>
+          <ol>
+            <li>感知目标、地图路线、车辆位姿与速度等输入是否在同一时间轴上有效。</li>
+            <li>目标场景模块是否已注册、请求执行、等待批准、被拒绝或被取消。</li>
+            <li>参考路径、候选路径和最终路径在哪一步开始分叉。</li>
+            <li>路径已经正确但车辆未跟随时，再转向运动规划、控制和车辆接口排查。</li>
+          </ol>
+          <div class="note warning"><strong>当前学习边界：</strong>能够定位包根目录并识别文件职责，不等于已经读完该模块。只有解释清楚输入、输出、启动配置、关键状态和一条真实执行路径，才算完成模块级学习。</div>
+          <p class="muted">参考：<a href="https://autowarefoundation.github.io/autoware-documentation/main/design/autoware-architecture-v1/" target="_blank" rel="noreferrer">Autoware 架构概览</a>、<a href="https://autowarefoundation.github.io/autoware_universe/main/planning/behavior_path_planner/autoware_behavior_path_planner/" target="_blank" rel="noreferrer">Behavior Path Planner</a>与 <a href="https://docs.ros.org/en/iron/The-ROS2-Project/Contributing/Developer-Guide.html#filesystem-layout" target="_blank" rel="noreferrer">ROS 2 包目录约定</a>。</p>
 
           <h3 id="workspace-version-build">版本清单导入与 colcon 编译</h3>
           <p>制作可复现的 Autoware 场景包时，必须把“当前版本、目标版本、源码清单、编译结果、重跑结果”分开记录。仅切换目录名或只看到脚本启动，不足以证明版本适配完成。</p>
@@ -801,6 +855,9 @@ uint8_t value = rx[1];</code></pre>
             <li><a href="https://docs.ros.org/en/humble/Tutorials/Beginner-CLI-Tools/Understanding-ROS2-Nodes/Understanding-ROS2-Nodes.html" target="_blank" rel="noreferrer">ROS 2 Humble：理解节点</a></li>
             <li><a href="https://docs.ros.org/en/humble/Concepts/Basic/Interfaces-Topics-Services-Actions.html" target="_blank" rel="noreferrer">ROS 2：Topics、Services 与 Actions</a></li>
             <li><a href="https://docs.ros.org/en/humble/Concepts/Intermediate/About-Quality-of-Service-Settings.html" target="_blank" rel="noreferrer">ROS 2 Humble：QoS 设置</a></li>
+            <li><a href="https://autowarefoundation.github.io/autoware-documentation/main/design/autoware-architecture-v1/" target="_blank" rel="noreferrer">Autoware：架构概览</a></li>
+            <li><a href="https://autowarefoundation.github.io/autoware_universe/main/planning/behavior_path_planner/autoware_behavior_path_planner/" target="_blank" rel="noreferrer">Autoware：Behavior Path Planner</a></li>
+            <li><a href="https://docs.ros.org/en/iron/The-ROS2-Project/Contributing/Developer-Guide.html#filesystem-layout" target="_blank" rel="noreferrer">ROS 2：包目录约定</a></li>
             <li><a href="https://github.com/dirk-thomas/vcstool" target="_blank" rel="noreferrer">vcstool：多仓库导入与导出</a></li>
             <li><a href="https://colcon.readthedocs.io/en/released/reference/verb/build.html" target="_blank" rel="noreferrer">colcon：build 参考</a></li>
             <li><a href="https://man.openbsd.org/scp.1" target="_blank" rel="noreferrer">OpenSSH：scp 手册</a></li>

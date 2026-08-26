@@ -379,6 +379,54 @@ find launch config src include test -maxdepth 2 -type f 2&gt;/dev/null | sort</c
           <div class="note warning"><strong>当前学习边界：</strong>能够定位包根目录并识别文件职责，不等于已经读完该模块。只有解释清楚输入、输出、启动配置、关键状态和一条真实执行路径，才算完成模块级学习。</div>
           <p class="muted">参考：<a href="https://autowarefoundation.github.io/autoware-documentation/main/design/autoware-architecture-v1/" target="_blank" rel="noreferrer">Autoware 架构概览</a>、<a href="https://autowarefoundation.github.io/autoware_universe/main/planning/behavior_path_planner/autoware_behavior_path_planner/" target="_blank" rel="noreferrer">Behavior Path Planner</a>与 <a href="https://docs.ros.org/en/iron/The-ROS2-Project/Contributing/Developer-Guide.html#filesystem-layout" target="_blank" rel="noreferrer">ROS 2 包目录约定</a>。</p>
 
+          <h3 id="autoware-message-semantics">从消息定义理解感知对象、不确定性与车辆运动</h3>
+          <p>阅读 Autoware 数据时，不要只看话题名称。先展开消息类型，确认时间、坐标系、对象数组和嵌套字段，再判断数据是否能被下游规划正确使用。</p>
+          <pre><code># 先查话题类型，再展开当前环境中实际安装的接口
+ros2 topic type &lt;话题名&gt;
+ros2 interface show &lt;消息类型&gt;
+
+# 只读取一条样本，核对字段、单位和实际值
+ros2 topic echo &lt;话题名&gt; --once</code></pre>
+          <div class="note"><strong>接口定义是当前版本的事实来源：</strong>同名消息可能随 Autoware 版本或项目分支扩展。分类编号、字段和语义应以本机 <code>ros2 interface show</code>、工作区中的 <code>.msg</code> 文件及对应版本文档为准，不能跨版本凭记忆硬编码。</div>
+
+          <h3>Header、时间与坐标系</h3>
+          <table><thead><tr><th>字段</th><th>含义</th><th>排查重点</th></tr></thead><tbody>
+            <tr><td><code>header.stamp.sec</code></td><td>时间戳的整数秒部分。</td><td rowspan="2">组合时间为 <code>t = sec + nanosec × 10⁻⁹</code> 秒。对齐传感器、感知、规划数据时应比较消息时间，而不是终端显示时间。</td></tr>
+            <tr><td><code>header.stamp.nanosec</code></td><td>不足一秒的纳秒部分。</td></tr>
+            <tr><td><code>header.frame_id</code></td><td>该数据关联的坐标系。</td><td>核对 TF 树中是否存在该坐标系、变换方向是否正确、变换时间是否覆盖消息时间。</td></tr>
+          </tbody></table>
+          <p>时间戳回答“这份数据何时有效”，<code>frame_id</code> 回答“数值在哪个坐标系中解释”。只核对数值而忽略这两项，容易把正常目标误判为位置跳变或轨迹错位。</p>
+
+          <h3>PredictedObjects 的嵌套结构</h3>
+          <div class="layers">
+            <div class="layer"><strong>集合层</strong><span><code>std_msgs/Header header</code> 描述整批对象的时间与坐标系，<code>PredictedObject[] objects</code> 保存零个或多个目标。</span></div>
+            <div class="layer"><strong>对象层</strong><span><code>object_id</code> 用 UUID 标识对象；同时包含存在概率、分类数组、运动学状态与形状。</span></div>
+            <div class="layer"><strong>分类层</strong><span>每项包含类别标签和概率。分析时应查看完整概率分布及生产节点规则，不能只看数组位置或把编号直接当成人类可读类别。</span></div>
+            <div class="layer"><strong>运动层</strong><span>位姿、速度、加速度、预测路径及其置信度用于描述“现在在哪里、怎样运动、未来可能去哪”。字段以实际消息版本为准。</span></div>
+          </div>
+          <table><thead><tr><th>类别组</th><th>典型标签</th><th>通用解释</th></tr></thead><tbody>
+            <tr><td>交通参与者</td><td><code>TRAILER</code>、<code>MOTORCYCLE</code>、<code>BICYCLE</code>、<code>PEDESTRIAN</code></td><td>挂车、摩托车、自行车和行人。</td></tr>
+            <tr><td>项目或版本扩展</td><td><code>CONSTRUCTION_VEHICLE</code>、<code>BARRIER</code>、<code>TRAFFIC_CONE</code>、<code>ANIMAL</code>、<code>HAZARD</code></td><td>工程车辆、隔离设施、交通锥、动物或其他危险物；是否存在及编号取决于消息版本。</td></tr>
+            <tr><td>可通行关系</td><td><code>OVER_DRIVABLE</code>、<code>UNDER_DRIVABLE</code></td><td>表示可从物体上方压过或从其下方通过的语义分类；具体安全条件必须由当前消息定义和下游规划规则确认。</td></tr>
+          </tbody></table>
+
+          <h3><code>covariance[36]</code> 表示什么</h3>
+          <p>ROS 几何消息常把 6×6 协方差矩阵按行展开为 36 个数。对位姿，变量顺序通常是 <code>(x, y, z, 绕 X 旋转, 绕 Y 旋转, 绕 Z 旋转)</code>；速度协方差则对应线速度与角速度。使用前必须查看具体字段的消息定义。</p>
+          <table><thead><tr><th>位置</th><th>含义</th><th>读法</th></tr></thead><tbody>
+            <tr><td>对角线</td><td>每个变量的方差。</td><td>标准差为 <code>σ = √variance</code>；方差越大通常表示该维估计越不确定。</td></tr>
+            <tr><td>非对角线</td><td>两个变量之间的协方差。</td><td>反映误差是否共同变化；不能在不知道变量顺序时直接解释。</td></tr>
+            <tr><td>全零矩阵</td><td>数值为零，但语义取决于发布节点约定。</td><td>不要自动解释为“完全准确”；应查发布节点、接口约定和上游传感器是否真实提供不确定性。</td></tr>
+          </tbody></table>
+          <p>协方差可被定位融合、目标跟踪、数据关联、异常值门限和规划安全裕度等环节使用，但每个节点是否消费该字段、如何消费，必须沿订阅者源码或文档验证。</p>
+
+          <h3>轴距与转弯：把“转弯更慢”说准确</h3>
+          <p>在简化 Ackermann 自行车模型中，若前轮转角 <code>δ</code> 和车速 <code>v</code> 相同，轴距 <code>L</code> 越长，曲率和横摆角速度越小，转弯半径越大：</p>
+          <pre><code>曲率：κ = tan(δ) / L
+转弯半径：R = L / tan(δ)
+横摆角速度：r = v · tan(δ) / L</code></pre>
+          <p>因此“轴距越长，转弯越慢”只是在<strong>相同车速与转角</strong>条件下的简写。轴距会影响最小转弯半径、轨迹可行性、控制器参数和仿真一致性；它是车辆物理参数，不应为了掩盖规划或控制问题而随意调节。</p>
+          <p class="muted">参考：ROS 2 的 <a href="https://docs.ros.org/en/ros2_packages/humble/api/std_msgs/msg/Header.html" target="_blank" rel="noreferrer">Header</a>、<a href="https://docs.ros.org/en/humble/p/geometry_msgs/msg/PoseWithCovariance.html" target="_blank" rel="noreferrer">PoseWithCovariance</a>，Autoware 的 <a href="https://docs.ros.org/en/humble/p/autoware_perception_msgs/msg/PredictedObjects.html" target="_blank" rel="noreferrer">PredictedObjects</a>、<a href="https://docs.ros.org/en/humble/p/autoware_perception_msgs/msg/ObjectClassification.html" target="_blank" rel="noreferrer">ObjectClassification</a>与 <a href="https://autowarefoundation.github.io/autoware_universe/main/planning/autoware_trajectory_processor/docs/kinematic_feasibility_enforcer/" target="_blank" rel="noreferrer">Ackermann 运动学约束</a>。</p>
+
           <h3 id="workspace-version-build">版本清单导入与 colcon 编译</h3>
           <p>制作可复现的 Autoware 场景包时，必须把“当前版本、目标版本、源码清单、编译结果、重跑结果”分开记录。仅切换目录名或只看到脚本启动，不足以证明版本适配完成。</p>
           <h3>用 vcstool 导入多个仓库清单</h3>
@@ -855,6 +903,11 @@ uint8_t value = rx[1];</code></pre>
             <li><a href="https://docs.ros.org/en/humble/Tutorials/Beginner-CLI-Tools/Understanding-ROS2-Nodes/Understanding-ROS2-Nodes.html" target="_blank" rel="noreferrer">ROS 2 Humble：理解节点</a></li>
             <li><a href="https://docs.ros.org/en/humble/Concepts/Basic/Interfaces-Topics-Services-Actions.html" target="_blank" rel="noreferrer">ROS 2：Topics、Services 与 Actions</a></li>
             <li><a href="https://docs.ros.org/en/humble/Concepts/Intermediate/About-Quality-of-Service-Settings.html" target="_blank" rel="noreferrer">ROS 2 Humble：QoS 设置</a></li>
+            <li><a href="https://docs.ros.org/en/ros2_packages/humble/api/std_msgs/msg/Header.html" target="_blank" rel="noreferrer">ROS 2 Humble：Header 消息</a></li>
+            <li><a href="https://docs.ros.org/en/humble/p/geometry_msgs/msg/PoseWithCovariance.html" target="_blank" rel="noreferrer">ROS 2 Humble：PoseWithCovariance</a></li>
+            <li><a href="https://docs.ros.org/en/humble/p/autoware_perception_msgs/msg/PredictedObjects.html" target="_blank" rel="noreferrer">Autoware：PredictedObjects 消息</a></li>
+            <li><a href="https://docs.ros.org/en/humble/p/autoware_perception_msgs/msg/ObjectClassification.html" target="_blank" rel="noreferrer">Autoware：ObjectClassification 消息</a></li>
+            <li><a href="https://autowarefoundation.github.io/autoware_universe/main/planning/autoware_trajectory_processor/docs/kinematic_feasibility_enforcer/" target="_blank" rel="noreferrer">Autoware：Ackermann 运动学约束</a></li>
             <li><a href="https://autowarefoundation.github.io/autoware-documentation/main/design/autoware-architecture-v1/" target="_blank" rel="noreferrer">Autoware：架构概览</a></li>
             <li><a href="https://autowarefoundation.github.io/autoware_universe/main/planning/behavior_path_planner/autoware_behavior_path_planner/" target="_blank" rel="noreferrer">Autoware：Behavior Path Planner</a></li>
             <li><a href="https://docs.ros.org/en/iron/The-ROS2-Project/Contributing/Developer-Guide.html#filesystem-layout" target="_blank" rel="noreferrer">ROS 2：包目录约定</a></li>

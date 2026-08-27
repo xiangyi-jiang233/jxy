@@ -299,6 +299,12 @@ scp -r &lt;本地目录&gt; &lt;用户名&gt;@&lt;IP地址&gt;:&lt;远端目录&
         <section id="autoware-start">
           <h2>13｜Autoware 架构、源码定位与启动验证</h2>
           <p class="lead">先用分层架构理解数据如何流动，再定位到具体 ROS 2 包阅读接口与源码；启动时则逐层证明容器、环境、资源和配置正确。</p>
+          <figure style="margin: 24px 0 30px; padding: 14px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface);">
+            <a href="../assets/autoware/autoware-architecture-core-modules.webp" target="_blank" rel="noreferrer">
+              <img src="../assets/autoware/autoware-architecture-core-modules.webp" alt="Autoware 总体架构、核心模块细分与学习顺序图" loading="lazy" style="display: block; width: 100%; height: auto; border-radius: 12px;">
+            </a>
+            <figcaption class="muted" style="margin-top: 10px;">Autoware 总体架构与核心模块学习图。点击图片可查看完整尺寸；具体包名、话题名和启用模块以当前工作区版本为准。</figcaption>
+          </figure>
           <div class="flow"><div><strong>确认容器</strong><small>目标容器处于运行状态</small></div><div><strong>加载环境</strong><small>先 ROS 2，再 Autoware 工作空间</small></div><div><strong>核对资源</strong><small>软件包、地图入口与模型存在</small></div><div><strong>启动并验证</strong><small>观察进程、节点、话题与界面</small></div></div>
           <pre><code># 宿主机
 docker ps --filter name=&lt;容器名&gt;

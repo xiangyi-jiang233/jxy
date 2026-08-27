@@ -15,12 +15,12 @@
 - Python 命令行工具设计
 - Docker 文件流转与 Linux 软链接
 - DDS、RMW、CycloneDDS、QoS 兼容性与分层排障
-- Autoware 七层架构、ROS 2 消息语义、感知对象、协方差、车辆运动学、源码包阅读、Behavior Path Planner、vcstool 与 colcon 编译
+- Autoware 七层架构、规划主数据流、ROS 2 消息语义、PredictedObjects、协方差、车辆运动学、规划子模块、源码包阅读、Behavior Path Planner、vcstool 与 colcon 编译
 - ROS 2 选择性录制与结果验收
 - 场景包制作、MCAP 额外话题配置、感知/规划异常分类、重跑验证与可复现留痕
 - 实车回放与闭环仿真一致性分析
 - Excel 长数字、科学计数法与精度保护
-- Git 命令、分支协作、GitHub Pages 重部署与代理排障
+- Git 命令、远端测试分支切换、fetch/pull 区分、多仓库更新排障、GitHub Pages 重部署与代理排障
 - SPI 信号线、时钟模式、代码结构与通信排查
 - MCP 架构、远程/本地服务器、频率限制与权限边界
 - 代理开启时访问内网服务的直连方法

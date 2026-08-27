@@ -427,6 +427,53 @@ ros2 topic echo &lt;话题名&gt; --once</code></pre>
           <p>因此“轴距越长，转弯越慢”只是在<strong>相同车速与转角</strong>条件下的简写。轴距会影响最小转弯半径、轨迹可行性、控制器参数和仿真一致性；它是车辆物理参数，不应为了掩盖规划或控制问题而随意调节。</p>
           <p class="muted">参考：ROS 2 的 <a href="https://docs.ros.org/en/ros2_packages/humble/api/std_msgs/msg/Header.html" target="_blank" rel="noreferrer">Header</a>、<a href="https://docs.ros.org/en/humble/p/geometry_msgs/msg/PoseWithCovariance.html" target="_blank" rel="noreferrer">PoseWithCovariance</a>，Autoware 的 <a href="https://docs.ros.org/en/humble/p/autoware_perception_msgs/msg/PredictedObjects.html" target="_blank" rel="noreferrer">PredictedObjects</a>、<a href="https://docs.ros.org/en/humble/p/autoware_perception_msgs/msg/ObjectClassification.html" target="_blank" rel="noreferrer">ObjectClassification</a>与 <a href="https://autowarefoundation.github.io/autoware_universe/main/planning/autoware_trajectory_processor/docs/kinematic_feasibility_enforcer/" target="_blank" rel="noreferrer">Ackermann 运动学约束</a>。</p>
 
+
+          <h3 id="autoware-planning-dataflow">从感知输入到控制输出：规划主数据流</h3>
+          <p>排查规划问题时，先把系统看成一条逐步收敛的数据链。不同 Autoware 版本的包名、组合方式和话题名可能变化，下表表达的是职责关系；实际接口应以当前工作区的 launch、参数文件和 <code>ros2 topic info</code> 为准。</p>
+          <div class="flow"><div><strong>任务与路线</strong><small>Mission Planner 根据目标点和矢量地图生成 Route</small></div><div><strong>行为规划</strong><small>Behavior Path Planner 选择车道跟随、变道或避让等行为，输出 Path 与可行驶区域</small></div><div><strong>运动规划</strong><small>路径优化与速度规划把行为结果变成平滑、可行并满足停止/减速约束的 Trajectory</small></div><div><strong>控制执行</strong><small>控制器根据轨迹和车辆状态计算转向、加速与制动命令</small></div></div>
+          <table><thead><tr><th>输入或阶段</th><th>常见消息</th><th>回答的问题</th></tr></thead><tbody>
+            <tr><td>定位</td><td><code>nav_msgs/msg/Odometry</code></td><td>主车此刻在哪里、朝向如何、速度是多少？</td></tr>
+            <tr><td>感知</td><td><code>autoware_perception_msgs/msg/PredictedObjects</code></td><td>周围有哪些目标，它们可能怎样运动？</td></tr>
+            <tr><td>地图与路线</td><td><code>LaneletMapBin</code>、<code>Route</code></td><td>哪些区域可行驶，任务要求走到哪里？</td></tr>
+            <tr><td>行为路径</td><td><code>Path</code></td><td>应该保持车道、变道、避让还是停车？空间路径和可行驶边界是什么？</td></tr>
+            <tr><td>运动轨迹</td><td><code>Trajectory</code></td><td>沿哪条平滑轨迹，以什么速度和加速度行驶？</td></tr>
+            <tr><td>控制</td><td>控制命令</td><td>车辆此刻需要多少转向、驱动力或制动力？</td></tr>
+          </tbody></table>
+
+          <h3>规划子模块如何分工</h3>
+          <ul>
+            <li><code>mission_planner</code> 负责从起点、目标点和地图生成全局路线，不直接完成局部避障。</li>
+            <li><code>behavior_path_planner</code> 负责横向行为与场景选择，例如车道跟随、变道和避让，并管理模块的请求、批准、执行与结束状态。</li>
+            <li><code>elastic_band_smoother</code>、<code>path_optimizer</code> 等路径处理模块改善几何连续性和车辆运动学可行性；具体启用哪个模块由版本和启动配置决定。</li>
+            <li><code>behavior_velocity_planner</code> 根据交通规则与场景在路径上加入停车、减速等速度约束。</li>
+            <li><code>motion_velocity_planner</code> 等纵向运动规划模块综合障碍物、限速以及加速度/加加速度约束，生成可执行速度曲线。</li>
+            <li><code>planning_evaluator</code> 用指标观察规划结果；<code>simple_planning_simulator</code> 用于简化车辆运动响应。它们分别属于评估和仿真辅助，不应与主规划器职责混淆。</li>
+          </ul>
+          <div class="note"><strong>Path 与 Trajectory 的直观区别：</strong>Path 更侧重“空间上走哪里”和可行驶边界；Trajectory 在此基础上进一步给出时序相关的速度、加速度等可执行信息。具体字段仍以当前消息定义为准。</div>
+
+          <h3>候选路径、准备段与最终路径</h3>
+          <p>候选路径是场景模块提出、但尚未必被批准为最终输出的方案。以变道为例，调试时应分别记录“首次产生候选”“通过安全检查”“获得批准”“进入横向移动”“取消或完成”的时间，而不是只看车辆是否已经横移。</p>
+          <p><code>prepare_duration</code> 常用于描述横向移动前的准备时间。在速度近似稳定时，准备段纵向距离可粗略理解为 <code>d ≈ v × t</code>；时间增大通常会让正式横移开始得更晚、准备距离更长，但最终效果还受车辆速度、路线剩余距离、安全检查、采样范围和版本实现共同影响，不能只凭单个参数判断根因。</p>
+
+          <h3>用话题把现象定位到具体阶段</h3>
+          <pre><code># 先确认消息类型、发布/订阅端与 QoS
+ros2 topic info &lt;定位话题&gt; --verbose
+ros2 topic info &lt;感知对象话题&gt; --verbose
+ros2 topic info &lt;行为路径话题&gt; --verbose
+ros2 topic info &lt;最终轨迹话题&gt; --verbose
+
+# 再检查实际字段和一条样本
+ros2 interface show &lt;消息类型&gt;
+ros2 topic echo &lt;话题名&gt; --once</code></pre>
+          <ol>
+            <li>定位和感知已经异常：先修上游输入，不把结果归因于规划参数。</li>
+            <li>上游正确、候选路径未产生：检查路线、地图、模块激活条件和请求状态。</li>
+            <li>有候选但未成为最终路径：检查安全判定、批准状态、取消原因和模块竞争。</li>
+            <li>最终路径正确、Trajectory 异常：转向路径优化或速度规划。</li>
+            <li>Trajectory 正确但车辆响应异常：转向控制、车辆接口、延迟和车辆模型。</li>
+          </ol>
+          <p class="muted">参考：Autoware Universe 的 <a href="https://autowarefoundation.github.io/autoware_universe/main/planning/" target="_blank" rel="noreferrer">Planning Components</a>、<a href="https://autowarefoundation.github.io/autoware_universe/main/planning/behavior_path_planner/autoware_behavior_path_planner/" target="_blank" rel="noreferrer">Behavior Path Planner</a>与 <a href="https://autowarefoundation.github.io/autoware_universe/main/planning/autoware_path_optimizer/" target="_blank" rel="noreferrer">Path Optimizer</a>。</p>
+
           <h3 id="workspace-version-build">版本清单导入与 colcon 编译</h3>
           <p>制作可复现的 Autoware 场景包时，必须把“当前版本、目标版本、源码清单、编译结果、重跑结果”分开记录。仅切换目录名或只看到脚本启动，不足以证明版本适配完成。</p>
           <h3>用 vcstool 导入多个仓库清单</h3>
@@ -730,6 +777,41 @@ git commit -m "feat: describe the change"
 git push -u origin &lt;功能分支&gt;</code></pre>
           <ol><li>从最新默认分支创建独立功能分支。</li><li>每个提交只表达一个清晰目的，提交前检查暂存差异。</li><li>推送分支后在 GitHub 创建 Pull Request。</li><li>通过评审和检查后合并，避免直接在默认分支堆积未经验证的修改。</li></ol>
 
+
+
+          <h3 id="git-remote-branch-update">更新远端信息并安全切换已有测试分支</h3>
+          <p><code>git fetch</code> 只下载远端引用并更新 <code>origin/&lt;分支&gt;</code> 等远端跟踪分支，不会把内容合并进当前分支；<code>git pull</code> 会先 fetch，再把当前分支的上游分支整合进当前分支。因此只想查看新分支或确认远端状态时，先用 fetch 更容易控制影响。</p>
+          <pre><code># 先保护工作区并刷新远端分支列表
+git status
+git fetch origin
+git branch -r
+
+# 远端分支尚无同名本地分支时
+git switch --track origin/&lt;目标分支&gt;
+
+# 已有同名本地分支时
+git switch &lt;目标分支&gt;
+git branch -vv
+
+# 仅允许快进，避免无意生成合并提交
+git pull --ff-only</code></pre>
+          <div class="note warning"><strong>切换前先看 <code>git status</code>：</strong>未提交修改可能阻止切换或被带到目标分支。不要用 <code>git switch --discard-changes</code> 或其他强制选项掩盖问题；应先明确提交、暂存备份或人工处理这些修改。</div>
+
+          <h3>多仓库更新“卡住”时如何判断</h3>
+          <p>多仓库工具可能长时间停留在某个仓库的最后一条输出；“HEAD is now at …”只表示该仓库已切到某个提交，后续静默不等于一定卡死。先判断进程是否仍在运行、网络是否有流量、是否等待认证或代理超时，再决定是否中断。</p>
+          <ol>
+            <li>保留当前终端，在另一个终端查看相关 Git/SSH 进程及资源活动。</li>
+            <li>区分错误类型：DNS、连接超时和 443 不可达优先查网络/代理；<code>Permission denied (publickey)</code> 优先查 SSH 身份与仓库权限。</li>
+            <li>确认进程已退出后，只重试失败的仓库或原更新命令；不要在未知状态下并发启动多次更新。</li>
+            <li>需要代理时使用占位配置，并在当前 Shell 或 Git 配置中核对实际生效值：</li>
+          </ol>
+          <pre><code>export http_proxy=http://&lt;代理IP&gt;:&lt;代理端口&gt;
+export https_proxy=http://&lt;代理IP&gt;:&lt;代理端口&gt;
+
+git config --get http.proxy
+git config --get https.proxy</code></pre>
+          <p>SSH 密钥解决身份认证，代理解决网络可达性；二者可能同时需要，但不能互相替代。Issue 中只记录错误类别、验证命令、处理步骤与结果，不公开真实代理地址、用户名、密钥或内部仓库名。</p>
+          <p class="muted">参考：Git 官方的 <a href="https://git-scm.com/docs/git-fetch" target="_blank" rel="noreferrer">git fetch</a>、<a href="https://git-scm.com/docs/git-pull" target="_blank" rel="noreferrer">git pull</a>与 <a href="https://git-scm.com/docs/git-switch" target="_blank" rel="noreferrer">git switch</a>。</p>
 
           <h3>账号或仓库改名后 GitHub Pages 无法访问</h3>
           <p>账号或仓库名称变化会同时影响仓库命名空间、默认 Pages 地址、外部链接和本地远端配置。普通仓库链接通常会自动重定向，但 Pages 地址和写死的旧名称仍应逐项核对。</p>

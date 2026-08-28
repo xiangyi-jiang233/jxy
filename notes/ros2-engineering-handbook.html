@@ -59,6 +59,65 @@ ros2 topic bw &lt;话题名&gt;</code></pre>
             <tr><td><code>node list</code></td><td>当前有哪些节点正在运行？</td></tr><tr><td><code>node info</code></td><td>该节点发布、订阅、提供或调用什么？</td></tr><tr><td><code>topic info</code></td><td>话题类型是什么？有几个发布者和订阅者？</td></tr><tr><td><code>topic echo</code></td><td>消息内容是否真实到达？</td></tr><tr><td><code>topic hz</code></td><td>当前订阅端实际观察到的消息频率是多少？</td></tr><tr><td><code>topic bw</code></td><td>当前订阅端实际观察到的带宽是多少？</td></tr>
           </tbody></table>
           <div class="note"><strong>注意：</strong><code>hz</code> 和 <code>bw</code> 是工具自身作为订阅者测得的结果，会受到设备性能、网络和 QoS 影响，不一定等于发布端理论值。</div>
+
+
+          <h3 id="foxglove-ros-data-inspection">用 Foxglove 判断 ROS 2 数据是否真正更新</h3>
+          <p>Foxglove 是可选的可视化与调试客户端，不是 Autoware 运行所必需的组件。它可以在另一台电脑上使用，但客户端必须能通过局域网、虚拟组网或其他路由访问运行 ROS 连接服务的主机；“不在同一局域网”本身不是唯一限制，关键是地址、端口和路由是否可达。</p>
+          <div class="flow"><div><strong>确认数据源</strong><small>区分实时连接与 MCAP/rosbag 录制文件</small></div><div><strong>添加 Raw Messages</strong><small>选择目标话题，展开 header、数组和关键字段</small></div><div><strong>判断是否更新</strong><small>同时观察消息时间、字段变化、频率和连接状态</small></div><div><strong>追溯发布端</strong><small>用 ROS 2 CLI 确认节点、QoS 与数据来源</small></div></div>
+
+          <h3>Raw Messages 面板怎么看</h3>
+          <ol>
+            <li>在布局中选择 <strong>Add panel</strong>，添加 <strong>Raw Messages</strong>。</li>
+            <li>在面板的数据路径或话题选择器中选中 <code>&lt;话题名&gt;</code>。</li>
+            <li>先展开 <code>header</code>，再根据消息类型检查点数组、位姿、速度或状态字段。</li>
+            <li>Raw Messages 通常显示当前路径收到的最新消息；查看趋势时应改用 Plot，离散状态变化可用 State Transitions。</li>
+          </ol>
+          <div class="note"><strong>界面版本意识：</strong>按钮位置和数据路径语法可能随 Foxglove 版本变化，但核心步骤不变：连接数据源 → 添加面板 → 选择话题/字段 → 对照时间与内容。</div>
+
+          <h3><code>sec</code>、<code>nanosec</code> 为什么一直变化</h3>
+          <p>ROS 2 时间通常由整数秒和不足一秒的纳秒部分组成：</p>
+          <pre><code>消息时间（秒） = sec + nanosec × 10⁻⁹
+0 ≤ nanosec &lt; 1,000,000,000</code></pre>
+          <ul>
+            <li><code>nanosec</code> 在连续消息之间频繁变化是正常现象；跨过整秒时，<code>sec</code> 增加，<code>nanosec</code> 重新从较小值开始。</li>
+            <li>时间戳增加通常说明收到了带有新时间的消息，但不能单独证明轨迹内容发生变化。</li>
+            <li>时间戳不增加也不能直接得出“没有生成轨迹”；还要检查播放是否暂停、连接是否中断、发布节点是否复用旧时间，以及消息数组和具体字段是否变化。</li>
+          </ul>
+          <table><thead><tr><th>时间来源</th><th>含义</th><th>适合判断</th></tr></thead><tbody>
+            <tr><td>Log time</td><td>录制数据通常是原始记录时间；实时连接通常接近客户端收到消息的时间。</td><td>播放排序和跨面板同步。</td></tr>
+            <tr><td><code>header.stamp</code></td><td>由 ROS 消息生产链填写的业务时间。</td><td>传感器、TF、定位和规划数据的时序关系。</td></tr>
+            <tr><td>播放游标时间</td><td>当前录制文件的播放位置。</td><td>判断文件是否正在播放，不能替代消息自身时间。</td></tr>
+          </tbody></table>
+
+          <h3>Trajectory 是实时的还是场景包里的</h3>
+          <p>面板只能显示当前数据源提供的消息，不能仅凭轨迹形状判断来源。连接实时 ROS 系统时，它可能来自正在运行的规划节点；打开录制文件或运行数据回放时，它可能来自记录消息或由回放输入重新触发的规划结果。应追溯发布端和时钟：</p>
+          <pre><code>ros2 topic info &lt;轨迹话题&gt; --verbose
+ros2 topic hz &lt;轨迹话题&gt;
+ros2 topic echo &lt;轨迹话题&gt; --once
+ros2 node info &lt;发布节点&gt;
+
+# 使用仿真时间时再检查
+ros2 topic echo /clock --once
+ros2 param get &lt;发布节点&gt; use_sim_time</code></pre>
+          <ol>
+            <li>确认 Foxglove 当前连接的是实时数据源还是录制文件。</li>
+            <li>查看轨迹话题的发布节点；没有发布者时，历史画面或最后一条消息不代表当前仍在规划。</li>
+            <li>检查时间戳、消息频率、轨迹点数量和点内容是否共同变化。</li>
+            <li>若使用 <code>/clock</code>，确认回放或仿真时钟正在推进。</li>
+          </ol>
+
+          <h3>连接中断的分层排查</h3>
+          <pre><code>数据源配置
+  ↓
+客户端到远端主机的网络可达性
+  ↓
+连接服务的进程与监听端口
+  ↓
+ROS 2 话题是否存在并持续发布
+  ↓
+QoS、TF 和消息时间是否适合可视化</code></pre>
+          <p>远程桌面连接失败和 Foxglove 数据连接失败不是同一问题；前者影响操作远端图形界面，后者取决于数据服务、端口和网络路径。不要因为远控不可用就直接判定 ROS 2 节点或轨迹停止。</p>
+          <p class="muted">参考：Foxglove 的 <a href="https://docs.foxglove.dev/docs/visualization/panels/raw-messages" target="_blank" rel="noreferrer">Raw Messages</a>、<a href="https://docs.foxglove.dev/docs/visualization/playback" target="_blank" rel="noreferrer">播放与时间</a>、<a href="https://docs.foxglove.dev/docs/visualization/panels/3d" target="_blank" rel="noreferrer">3D 面板时间与 TF</a>和 <a href="https://docs.foxglove.dev/docs/visualization/panels/topic-graph" target="_blank" rel="noreferrer">Topic Graph</a>。</p>
         </section>
 
         <section id="tf2">
@@ -338,6 +397,31 @@ ros2 launch autoware_launch planning_simulator.launch.xml \
             <tr><td>Vehicle Interface</td><td>连接通用控制命令与具体车辆底盘，并回传车辆状态。</td><td>命令是否下发、执行器状态、限幅和反馈。</td></tr>
           </tbody></table>
           <div class="note"><strong>不要把七层当成单向直线：</strong>地图会同时服务定位、感知和规划，车辆状态也会反馈给定位与控制。七层更适合用来界定职责和接口，而不是代替实际 ROS 2 计算图。</div>
+
+
+          <h3 id="autoware-layer-boundaries">Sensing、Localization、Perception、Trajectory 与 Control 的边界</h3>
+          <table><thead><tr><th>概念</th><th>它负责什么</th><th>容易混淆的地方</th></tr></thead><tbody>
+            <tr><td>Sensing</td><td>驱动传感器并完成解码、校正、同步、过滤等预处理。</td><td>它不是“把所有环境数据统一转换到世界坐标系”的单一模块；具体节点会借助 TF 把数据变换到算法需要的坐标系。</td></tr>
+            <tr><td>Localization</td><td>利用 GNSS、IMU、轮速、点云匹配或其他信息估计主车位姿与运动状态。</td><td>定位描述的是“自车在哪里、怎样运动”，不是识别外部障碍物。</td></tr>
+            <tr><td>Perception</td><td>把传感器观测转成目标、车道、信号灯和预测轨迹等环境语义。</td><td>感知结果可以位于自车或世界相关坐标系；应以消息 <code>frame_id</code> 和 TF 为准。</td></tr>
+            <tr><td>Trajectory</td><td>规划器给出的目标运动序列，通常包含位置、姿态、速度和加速度等期望值。</td><td>它是“准备怎样走”，不是车辆已经执行的真实运动。</td></tr>
+            <tr><td>Control</td><td>比较当前车辆状态与目标轨迹，计算转向、加速和制动命令。</td><td>轨迹正确但车辆没有按轨迹行驶时，应继续检查控制与车辆接口。</td></tr>
+          </tbody></table>
+
+          <h3><code>odom</code> 从哪里来</h3>
+          <p><code>odom</code> 既可以指坐标系，也经常出现在 <code>nav_msgs/msg/Odometry</code> 类型的话题名中。它不是固定由某一个传感器直接产生：轮速积分、视觉/激光里程计、IMU 融合、状态估计器或仿真器都可能提供里程计信息。</p>
+          <ul>
+            <li><code>header.frame_id</code> 表示位姿所参考的坐标系。</li>
+            <li><code>child_frame_id</code> 表示速度所关联的车体坐标系。</li>
+            <li><code>pose</code> 表示位置与姿态，<code>twist</code> 表示线速度与角速度；协方差描述估计不确定性。</li>
+            <li>Autoware 中常用的车辆运动状态通常已经经过定位或状态估计链处理，不能仅凭话题名断定它来自 GNSS、IMU 或轮速。</li>
+          </ul>
+          <pre><code>ros2 topic type &lt;里程计话题&gt;
+ros2 topic info &lt;里程计话题&gt; --verbose
+ros2 interface show nav_msgs/msg/Odometry
+ros2 node info &lt;发布节点&gt;</code></pre>
+          <div class="note"><strong>频率不能凭模块名称猜：</strong>定位、感知和规划的实际频率取决于传感器、节点配置、输入触发方式和运行负载。应使用 <code>ros2 topic hz</code> 在当前环境实测，并记录测量条件。</div>
+          <p class="muted">参考：<a href="https://autowarefoundation.github.io/autoware-documentation/main/" target="_blank" rel="noreferrer">Autoware Documentation</a>、<a href="https://autowarefoundation.github.io/autoware-documentation/main/design/autoware-architecture-v1/components/map/" target="_blank" rel="noreferrer">Map 与各功能层的关系</a>和 <a href="https://autowarefoundation.github.io/autoware-documentation/main/contributing/coding-guidelines/ros-nodes/coordinate-system/" target="_blank" rel="noreferrer">Autoware 坐标系说明</a>。</p>
 
           <h3>用目录结构判断真正的 ROS 2 包根目录</h3>
           <p>按关键词搜索时，结果可能同时包含功能分组目录、包根目录、头文件命名空间目录和文档目录。不能看到名字相似就直接修改；应选择同时包含 <code>package.xml</code>、构建文件和源码目录的候选项。</p>

@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Autoware 官方架构图中文复习页：七层架构、Universe 节点总图、规划组件架构与个人学习进度。">
+  <title>Autoware 官方架构图复习｜Shirley 的技术知识库</title>
+  <style>
+    :root{color-scheme:light dark;--bg:#f4f7fb;--panel:#fff;--text:#172033;--muted:#64748b;--line:#dbe4f0;--accent:#2563eb;--soft:#eaf1ff;--good:#047857;--warn:#b45309}
+    @media(prefers-color-scheme:dark){:root{--bg:#0b1220;--panel:#111b2e;--text:#e7edf8;--muted:#9aa9bf;--line:#273552;--accent:#79a7ff;--soft:#172747;--good:#5ee1a6;--warn:#fbbf62}}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.72 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+    a{color:var(--accent)}.shell{width:min(1180px,calc(100% - 32px));margin:auto}.top{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+    .nav{min-height:62px;display:flex;align-items:center;justify-content:space-between;gap:20px}.brand{font-weight:800;text-decoration:none;color:var(--text)}.nav-links{display:flex;gap:18px;flex-wrap:wrap}.nav-links a{text-decoration:none}
+    header{padding:58px 0 30px}.eyebrow{color:var(--accent);font-weight:800;letter-spacing:.08em;text-transform:uppercase}h1{font-size:clamp(2rem,5vw,4rem);line-height:1.08;margin:.25em 0}h2{font-size:clamp(1.45rem,3vw,2.2rem);margin:0 0 .55em}h3{margin-top:1.6em}p{margin:.6em 0}.lead{font-size:1.12rem;color:var(--muted);max-width:850px}.meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}.pill{padding:6px 11px;border:1px solid var(--line);border-radius:999px;color:var(--muted);background:var(--panel)}
+    main{padding-bottom:60px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:clamp(20px,4vw,38px);margin:22px 0;box-shadow:0 16px 45px rgba(15,23,42,.06)}
+    .quick{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.quick div{background:var(--soft);border-radius:14px;padding:16px}.quick strong{display:block;color:var(--accent);margin-bottom:4px}
+    figure{margin:24px 0 8px;border:1px solid var(--line);border-radius:14px;padding:12px;background:#fff;overflow:auto}figure img{display:block;width:100%;height:auto;min-width:720px}figcaption{color:#475569;font-size:.9rem;padding:10px 5px 2px}
+    .callout{border-left:4px solid var(--accent);background:var(--soft);padding:14px 16px;border-radius:0 12px 12px 0;margin:18px 0}.warning{border-left-color:var(--warn)}.good{border-left-color:var(--good)}
+    table{border-collapse:collapse;width:100%;min-width:690px}th,td{text-align:left;border-bottom:1px solid var(--line);padding:12px 10px;vertical-align:top}th{color:var(--muted);font-size:.9rem}.table-wrap{overflow:auto}.now{background:var(--soft)}
+    .score{display:grid;grid-template-columns:180px 1fr;gap:24px;align-items:center}.score-num{aspect-ratio:1;border-radius:50%;display:grid;place-items:center;background:var(--soft);border:10px solid color-mix(in srgb,var(--accent) 38%,var(--line));font-size:2.2rem;font-weight:900;color:var(--accent)}ol,ul{padding-left:1.35em}.source-list a{word-break:break-all}footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted)}
+    @media(max-width:760px){.quick{grid-template-columns:1fr}.score{grid-template-columns:1fr}.score-num{width:150px}.nav{align-items:flex-start;padding:14px 0}.nav-links{gap:10px}}
+  </style>
+</head>
+<body>
+  <div class="top"><nav class="shell nav"><a class="brand" href="../index.html">Shirley 的技术知识库</a><div class="nav-links"><a href="#overview">总体架构</a><a href="#planning">规划架构</a><a href="#nodes">节点图</a><a href="#progress">学习进度</a></div></nav></div>
+  <header class="shell">
+    <div class="eyebrow">Autoware · Architecture Review</div>
+    <h1>官方架构图复习页</h1>
+    <p class="lead">把“我看到了哪些话题和源码”放回整套系统中定位：先看七层职责，再看规划内部结构，最后用节点总图追到具体 ROS 2 节点。</p>
+    <div class="meta"><span class="pill">整理日期：2026-08-28</span><span class="pill">官方文档快照：2026-08-24</span><span class="pill">当前进度：6.5 / 10</span></div>
+  </header>
+  <main class="shell">
+    <section class="panel">
+      <h2>三分钟复习顺序</h2>
+      <div class="quick">
+        <div><strong>1｜七层定位</strong>先说出 Sensing、Map、Localization、Perception、Planning、Control、Vehicle Interface 的职责。</div>
+        <div><strong>2｜规划闭环</strong>沿“地图/定位/感知 → Planning → Trajectory → Control”讲清输入输出。</div>
+        <div><strong>3｜落到节点</strong>在节点总图中找实际包和话题；运行版本仍以 <code>rqt_graph</code>、<code>ros2 node info</code> 为准。</div>
+      </div>
+    </section>
+
+    <section class="panel" id="overview">
+      <h2>1｜Autoware 七层总体架构</h2>
+      <p>官方 v1 架构用七个功能栈降低模块之间的耦合，让定位、感知、规划等组件可以按接口替换。你制作场景包时注入 Map、Localization、Perception 数据，本质上是在重建 Planning 所依赖的上游条件。</p>
+      <a href="assets/autoware/autoware-architecture-overview.drawio.svg" target="_blank" rel="noreferrer"><figure><img src="assets/autoware/autoware-architecture-overview.drawio.svg" alt="Autoware 七层总体架构官方图"><figcaption>点击可在新标签页打开完整 SVG 并放大。来源：Autoware Foundation 官方文档。</figcaption></figure></a>
+      <div class="callout"><strong>你现在最重要的主线：</strong>Map + Localization + Perception 提供事实，Planning 生成 Path/Trajectory，Control 负责跟踪。出现“变道时机不一致”时，先判断差异从 Planning 输入、行为决策、运动规划还是 Control 开始。</div>
+      <div class="callout warning"><strong>架构范围提醒：</strong>官方说明这版初始设计主要聚焦驾驶能力；Fail-safe、HMI、实时处理、冗余与状态监控当时未纳入完整范围。</div>
+    </section>
+
+    <section class="panel" id="planning">
+      <h2>2｜Planning 组件高层架构</h2>
+      <p>规划组件的目标不是只画一条线，而是把任务路线、行为决策、运动可行性与安全验证组合成控制器可跟踪的 Trajectory。</p>
+      <a href="assets/autoware/high-level-planning-diagram.drawio.svg" target="_blank" rel="noreferrer"><figure><img src="assets/autoware/high-level-planning-diagram.drawio.svg" alt="Autoware Planning 组件高层架构官方图"><figcaption>与你当前源码学习最相关的官方图：Mission Planning、Behavior/Motion Planning、Validation 及其上下游。</figcaption></figure></a>
+      <div class="table-wrap"><table>
+        <thead><tr><th>阶段</th><th>回答的问题</th><th>与你当前学习的对应关系</th></tr></thead>
+        <tbody>
+          <tr><td>Mission Planning</td><td>从当前位置到目标点走哪条路线？</td><td>Route、Lanelet 地图与目标点。</td></tr>
+          <tr><td>Behavior Planning</td><td>此刻应跟车、变道、避让还是停车？</td><td><code>behavior_path_planner</code>、<code>behavior_velocity_planner</code>、候选路径与批准状态。</td></tr>
+          <tr><td>Motion Planning</td><td>怎样把行为意图变成平滑、可行的路径和速度？</td><td>Path Optimizer、Elastic Band、Velocity Smoother。</td></tr>
+          <tr><td>Validation</td><td>最终轨迹是否安全、合理、可交给控制？</td><td>轨迹检查、异常响应与最终输出。</td></tr>
+        </tbody>
+      </table></div>
+      <p><strong>官方接口摘要：</strong>Planning 读取地图、感知目标/障碍物/占据栅格/交通灯、车辆位姿与运动状态、运行模式和目标点；主要向 Control 输出 Trajectory 与转向灯命令。Behavior → Motion 的中间结果是较粗的 Path，最终 Trajectory 包含位置、速度和加速度。</p>
+    </section>
+
+    <section class="panel" id="nodes">
+      <h2>3｜Autoware Universe 节点总图</h2>
+      <p>七层图用于理解职责，节点图用于定位实现。它非常密，复习时不要从头背节点名：只沿一条数据链追踪，例如 <code>PredictedObjects → Behavior Path Planner → Motion Planning → Trajectory</code>。</p>
+      <a href="assets/autoware/overall-node-diagram-autoware-universe.drawio.svg" target="_blank" rel="noreferrer"><figure><img src="assets/autoware/overall-node-diagram-autoware-universe.drawio.svg" alt="Autoware Universe 节点总图官方图"><figcaption>完整官方 SVG 已保存在知识库中；点击后放大查看。</figcaption></figure></a>
+      <div class="callout warning"><strong>不要把节点总图当作当前机器的绝对事实。</strong>官方明确说明该图按发行版更新，两个版本之间可能存在旧信息；你所用 RoboBus 分支还包含项目定制。实际运行关系用 <code>rqt_graph</code>、<code>ros2 node info</code> 和 <code>ros2 topic info -v</code> 验证。</div>
+    </section>
+
+    <section class="panel" id="progress">
+      <h2>4｜当前学习进度：6.5 / 10</h2>
+      <div class="score"><div class="score-num">6.5</div><div><p><strong>结论：</strong>第 6 级已经达到，第 7 级正在进行。你已能从数据与话题追到规划节点和源码文件，但还没有独立讲透一个模块从回调、核心算法、参数到输出验证的完整执行链。</p><p>这比“只会运行 Autoware”更进一步；现在的瓶颈不是继续认识更多模块名，而是把一个模块读深并用运行数据验证。</p></div></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>分数</th><th>标准</th><th>当前判断</th></tr></thead>
+        <tbody>
+          <tr><td>0–1</td><td>从未接触 → 知道 Autoware/ROS 2 的用途</td><td>已完成</td></tr>
+          <tr><td>2</td><td>能启动环境、运行基础命令</td><td>已完成：容器、工作空间、编译与 planning simulator。</td></tr>
+          <tr><td>3</td><td>能查看节点、话题和消息</td><td>已完成：话题类型、QoS、消息结构与频率。</td></tr>
+          <tr><td>4</td><td>能在 Foxglove/Lichtblick 中观察真实数据</td><td>已完成：已观察 Trajectory、回放与时间变化。</td></tr>
+          <tr><td>5</td><td>能解释消息字段和基本物理含义</td><td>已完成：Odometry、PredictedObjects、Path/Trajectory、协方差等。</td></tr>
+          <tr class="now"><td>6</td><td>能从话题追到发布/订阅节点和源码文件</td><td><strong>已达到：</strong>已定位 Behavior Path Planner、Velocity Smoother 的类、Publisher、Subscription 与 Callback。</td></tr>
+          <tr class="now"><td>7</td><td>能讲清一个模块的输入、处理、输出</td><td><strong>进行中：</strong>框架已理解，但尚缺一条真实执行路径的逐步验证。</td></tr>
+          <tr><td>8</td><td>能独立修改、编译并验证一个小功能</td><td>未达到；改配置与重制场景包不等于修改规划模块功能。</td></tr>
+          <tr><td>9</td><td>能独立分析复杂问题并定位主要原因</td><td>尚未稳定达到；变道复现已会列假设，但参数统一时现象仍不稳定。</td></tr>
+          <tr><td>10</td><td>能独立完成 Autoware 功能开发、调试与场景验证闭环</td><td>长期目标。</td></tr>
+        </tbody>
+      </table></div>
+      <h3>从 6.5 到 7 的最短任务</h3>
+      <ol>
+        <li>只选一个模块：建议继续 <code>velocity_smoother</code>，暂时不要同时扩展多个模块。</li>
+        <li>画出输入话题 → <code>onCurrentTrajectory()</code> → 核心平滑处理 → 输出 Trajectory 的调用链。</li>
+        <li>选 3 个关键参数，追到“参数声明 → 成员变量 → 参与计算的位置”。</li>
+        <li>用一段场景回放，在 Foxglove 对比输入/输出速度、加速度，说明模块具体改变了什么。</li>
+      </ol>
+      <div class="callout good"><strong>7 分验收句：</strong>不看笔记也能用 5 分钟讲清该模块为什么收到这份输入、经过哪些关键判断、为何产生当前输出，并能用话题数据证明。</div>
+    </section>
+
+    <section class="panel source-list">
+      <h2>官方出处与版本说明</h2>
+      <ul>
+        <li><a href="https://github.com/autowarefoundation/autoware-documentation/blob/f43b9606771ec6badf51d03131d73c0f7b708049/docs/design/autoware-architecture-v1/index.md" target="_blank" rel="noreferrer">Architecture overview（固定到官方提交 f43b960）</a></li>
+        <li><a href="https://github.com/autowarefoundation/autoware-documentation/blob/f43b9606771ec6badf51d03131d73c0f7b708049/docs/design/autoware-architecture-v1/components/planning/index.md" target="_blank" rel="noreferrer">Planning component design</a></li>
+        <li><a href="https://github.com/autowarefoundation/autoware-documentation/blob/f43b9606771ec6badf51d03131d73c0f7b708049/docs/design/autoware-architecture-v1/node-diagram/index.md" target="_blank" rel="noreferrer">Autoware Universe node diagram</a></li>
+        <li><a href="https://github.com/autowarefoundation/autoware-documentation/blob/f43b9606771ec6badf51d03131d73c0f7b708049/docs/design/autoware-architecture-v2/index.md" target="_blank" rel="noreferrer">Autoware 2.0 Architecture</a>：官方目前标注为 Under Construction，本页不把它作为当前 RoboBus/Autoware Universe 学习主线。</li>
+      </ul>
+      <p class="lead">原始图来自 Autoware Foundation 的 <code>autoware-documentation</code> 仓库，按 Apache License 2.0 使用；本页保留来源、固定提交与原始 SVG 文件名。</p>
+    </section>
+  </main>
+  <footer><div class="shell">用于个人复习 · 返回 <a href="../index.html">知识库首页</a></div></footer>
+</body>
+</html>

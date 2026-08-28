@@ -10,12 +10,12 @@
 
 - ROS 2 与机器人数据工程手册（20 个通用主题）
 - 《自动驾驶系统开发》12 周阅读与自检系统
-- ROS 2 节点、话题、TF2 与 rosbag
+- ROS 2 节点、话题、时间戳、TF2、rosbag 与 Foxglove 数据观察
 - MCAP 检查、时间、切割与恢复
 - Python 命令行工具设计
 - Docker 文件流转与 Linux 软链接
 - DDS、RMW、CycloneDDS、QoS 兼容性与分层排障
-- Autoware 七层架构、规划主数据流、ROS 2 消息语义、PredictedObjects、协方差、车辆运动学、规划子模块、源码包阅读、Behavior Path Planner、vcstool 与 colcon 编译
+- Autoware 七层架构、Sensing/Localization/Perception 边界、Odometry、Trajectory/Control、规划主数据流、PredictedObjects、协方差、规划子模块、源码包阅读、Behavior Path Planner、vcstool 与 colcon 编译
 - ROS 2 选择性录制与结果验收
 - 场景包制作、MCAP 额外话题配置、感知/规划异常分类、重跑验证与可复现留痕
 - 实车回放与闭环仿真一致性分析

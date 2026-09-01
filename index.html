@@ -407,10 +407,10 @@
               <div class="card-meta"><span>指标 · 变量 · 基准测试</span><a class="arrow" href="notes/ros2-engineering-handbook.html#middleware">阅读 →</a></div>
             </article>
 
-            <article class="card searchable" data-keywords="remote development ssh scp tailscale tailscaled nomachine shell container transfer socket daemon ai config instruction 远程 开发 文件传输 虚拟组网 环境 配置">
+            <article class="card searchable" data-keywords="remote development ssh scp openssh windows sshd connection refused http server python wget curl quote parentheses special filename no_proxy tailscale tailscaled nomachine shell container transfer socket daemon ai config instruction 远程 开发 文件传输 局域网 拒绝连接 特殊字符 括号 慢速 虚拟组网 环境 配置">
               <span class="tag">开发环境</span>
               <h3>远程环境与 AI 项目配置</h3>
-              <p>先识别本地、远程主机和容器，再排查虚拟组网、SSH/SCP、文件落点和项目级配置。</p>
+              <p>先识别本地、远程主机和容器，再排查 OpenSSH、SCP、临时 HTTP 传输、虚拟组网与文件落点。</p>
               <div class="card-meta"><span>环境 · 约定 · 验证</span><a class="arrow" href="notes/ros2-engineering-handbook.html#remote">阅读 →</a></div>
             </article>
             <article class="card searchable" data-keywords="autoware official architecture diagram node graph planning progress score 七层 架构图 节点图 规划 学习进度 复习">
@@ -420,10 +420,10 @@
               <div class="card-meta"><span>3 张官方图 · 6.5/10</span><a class="arrow" href="notes/autoware-architecture-review.html">打开复习页 →</a></div>
             </article>
 
-            <article class="card searchable" data-keywords="autoware architecture sensing map localization perception planning control vehicle interface source package behavior path planner predicted objects header stamp frame_id uuid classification covariance uncertainty wheelbase ackermann cpp c++ constructor initializer this auto template unique_ptr shared_ptr make_unique make_shared declare_parameter create_publisher create_subscription callback std bind placeholders private namespace qos depth rg sed find README package.xml CMakeLists launch config include src test docker vcstool colcon 架构 消息 感知对象 分类 协方差 轴距 运动学 源码 构造函数 智能指针 参数 发布器 订阅器 回调 包目录 行为规划 变道 编译 启动">
+            <article class="card searchable" data-keywords="autoware architecture sensing map localization perception planning control vehicle interface scenario selector lane driving parking route lanelet path trajectory candidate reference safest source package behavior path planner predicted objects header stamp frame_id uuid classification covariance uncertainty wheelbase ackermann cpp c++ constructor initializer this auto template unique_ptr shared_ptr make_unique make_shared declare_parameter create_publisher create_subscription callback std bind placeholders private namespace qos depth rg sed find README package.xml CMakeLists launch config include src test docker vcstool colcon 架构 消息 感知对象 分类 协方差 轴距 运动学 源码 构造函数 智能指针 参数 发布器 订阅器 回调 包目录 行为规划 变道 编译 启动">
               <span class="tag">Autoware</span>
               <h3>架构、消息语义、源码与启动验证</h3>
-              <p>从七层架构和 ROS 2 消息进入 C++ 节点，沿构造函数、参数、回调和发布器追踪规划源码并完成运行验证。</p>
+              <p>从七层架构进入规划数据链，区分地图、Route、Path、Trajectory 与场景选择，再沿 C++ 回调和发布器完成运行验证。</p>
               <div class="card-meta"><span>架构 · 消息 · 源码</span><a class="arrow" href="notes/ros2-engineering-handbook.html#autoware-start">阅读 →</a></div>
             </article>
 

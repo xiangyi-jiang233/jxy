@@ -331,6 +331,38 @@ scp -r &lt;本地目录&gt; &lt;用户名&gt;@&lt;IP地址&gt;:&lt;远端目录&
           <div class="note"><strong>传输后验证：</strong>分别在源端和目标端使用 <code>ls -lh</code> 或 <code>stat</code> 核对文件；如果还需进入容器，再按“宿主机路径 → 容器路径”单独验证，不能混用两套路径。</div>
           <p class="muted">参考：<a href="https://man.openbsd.org/scp.1" target="_blank" rel="noreferrer">OpenSSH scp 手册</a>、<a href="https://tailscale.com/docs/reference/tailscale-cli" target="_blank" rel="noreferrer">Tailscale CLI</a>与 <a href="https://tailscale.com/docs/reference/tailscaled" target="_blank" rel="noreferrer">tailscaled daemon</a>。</p>
 
+          <h3 id="windows-lan-file-transfer">Windows 与 Linux 的局域网文件传输</h3>
+          <p>电脑间使用 <code>scp</code> 时，接收连接的一方必须运行 SSH Server。Windows 即使能主动执行 <code>ssh</code> 或 <code>scp</code>，也只代表安装了客户端；要让另一台电脑拉取 Windows 文件，还必须安装并启动 OpenSSH Server。</p>
+          <pre><code># Windows：在管理员 PowerShell 中检查、安装并启动服务
+Get-WindowsCapability -Online | Where-Object Name -like 'OpenSSH*'
+Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+Start-Service sshd
+Set-Service -Name sshd -StartupType Automatic
+Get-Service sshd
+Get-NetFirewallRule -Name OpenSSH-Server-In-TCP
+
+# Linux：从 Windows 拉取文件
+scp &lt;Windows用户名&gt;@&lt;IP地址&gt;:"C:/Users/&lt;Windows用户名&gt;/Downloads/&lt;文件名&gt;" &lt;本地目录&gt;/</code></pre>
+          <div class="note"><strong><code>Connection refused</code> 的含义：</strong>目标地址可达，但目标端口没有接受连接。优先检查 SSH Server 是否安装、<code>sshd</code> 是否运行、22 端口是否监听，以及入站防火墙规则；它通常不是用户名或密码错误。</div>
+
+          <h3>临时 HTTP 服务：适合可信局域网中的一次性传输</h3>
+          <pre><code># 在提供文件的电脑进入目标目录后启动
+py -m http.server &lt;端口&gt; --bind 0.0.0.0
+# Linux/macOS 也可使用
+python3 -m http.server &lt;端口&gt; --bind 0.0.0.0
+
+# 接收端下载；URL 含空格、括号、&amp; 等字符时引用完整 URL
+wget -P &lt;本地目录&gt; "http://&lt;IP地址&gt;:&lt;端口&gt;/&lt;文件名&gt;"
+curl -O "http://&lt;IP地址&gt;:&lt;端口&gt;/&lt;文件名&gt;"</code></pre>
+          <ul>
+            <li>Shell 会解释未引用的括号、空格、<code>&amp;</code>、<code>?</code> 等字符；出现 <code>syntax error near unexpected token</code> 时，应先给完整 URL 加引号，必要时再对文件名做 URL 编码。</li>
+            <li>局域网地址通常应直连。公网 HTTP 代理不一定能访问私有地址，错误配置反而可能变慢；应检查 <code>NO_PROXY</code>、代理直连规则，或用 <code>wget --no-proxy</code> 做对照。</li>
+            <li>下载慢时依次检查文件大小、Wi-Fi/网线链路、两端 CPU/磁盘占用、防火墙扫描和是否误走代理；只看进度条不能确定瓶颈。</li>
+            <li>Python 简易 HTTP 服务默认没有加密和身份认证，只应在可信网络中短时使用；传输后按 <kbd>Ctrl</kbd>+<kbd>C</kbd> 停止服务。</li>
+          </ul>
+          <div class="note"><strong>验收：</strong>传输前后分别用 <code>stat &lt;文件路径&gt;</code> 或校验和工具核对大小与内容，不能只依据命令退出码判断文件完整。</div>
+          <p class="muted">参考：Microsoft Learn 的 <a href="https://learn.microsoft.com/en-us/windows-server/administration/openssh/openssh_install_firstuse" target="_blank" rel="noreferrer">Windows OpenSSH Server 安装与启用</a>、Python 的 <a href="https://docs.python.org/3/library/http.server.html" target="_blank" rel="noreferrer">http.server</a> 与 GNU <a href="https://www.gnu.org/software/wget/manual/wget.html" target="_blank" rel="noreferrer">Wget 手册</a>。</p>
+
           <h3>代理开启时访问内网服务</h3>
           <p>内网、虚拟组网或本地开发服务通常不应绕到公网代理。通用做法是在代理客户端中建立直连规则，并确保它们排在兜底代理规则之前。</p>
           <ol><li>先判断目标是域名还是 IP；域名还要确认最终解析地址。</li><li>对私有地址段或内部域名后缀配置 <code>DIRECT</code>，不要只为单个完整 URL 写临时规则。</li><li>规则顺序遵循“更具体的直连规则在前，最终 <code>MATCH</code> / 默认代理在后”。</li><li>若客户端启用 TUN、Fake-IP 或远程 DNS，需同时检查 DNS 解析和路由结果。</li><li>修改后分别用域名和解析后的 IP 测试，确认请求没有被错误送入代理。</li></ol>
@@ -613,6 +645,23 @@ ros2 topic echo &lt;话题名&gt; --once</code></pre>
             <li><code>planning_evaluator</code> 用指标观察规划结果；<code>simple_planning_simulator</code> 用于简化车辆运动响应。它们分别属于评估和仿真辅助，不应与主规划器职责混淆。</li>
           </ul>
           <div class="note"><strong>Path 与 Trajectory 的直观区别：</strong>Path 更侧重“空间上走哪里”和可行驶边界；Trajectory 在此基础上进一步给出时序相关的速度、加速度等可执行信息。具体字段仍以当前消息定义为准。</div>
+
+          <h3 id="scenario-selector-boundary">Scenario Selector 选择的是场景，不是“最安全路径”</h3>
+          <p><code>Scenario Selector</code> 的典型职责是在车道行驶、停车等高层场景之间切换下游使用的 Trajectory。它可以结合路线、地图、车辆状态和各场景轨迹判断当前应激活哪个场景，但不是把同一场景生成的多条候选路径逐条评分后选出“最安全的一条”。</p>
+          <div class="note warning"><strong>不要混淆两种选择：</strong>场景切换解决“现在运行哪类规划器”；候选路径评估解决“该场景内部哪条方案满足安全、法规和运动学约束”。后者通常由 Behavior Path Planner 的具体场景模块及其安全检查完成。</div>
+          <table><thead><tr><th>数据层级</th><th>本质</th><th>典型作用</th></tr></thead><tbody>
+            <tr><td>Lanelet / 地图道路</td><td>带交通规则和拓扑关系的道路元素。</td><td>描述车道连接、边界、限速和可通行关系。</td></tr>
+            <tr><td>Route</td><td>从起点到目标点的一组路线段。</td><td>约束全局任务应经过哪些道路区域。</td></tr>
+            <tr><td>Path</td><td>按顺序排列的路径点及可行驶区域。</td><td>表达局部几何方案与横向行为；它是“点序列表示的路”，不是地图道路本体。</td></tr>
+            <tr><td>Trajectory</td><td>带速度、加速度等执行信息的有序轨迹点。</td><td>作为控制器需要跟踪的时空参考。</td></tr>
+          </tbody></table>
+          <p>在可视化工具里看到 <code>points[]</code>，说明消息在数据结构上由点组成；把这些点按顺序连接后，才形成 Path 或 Trajectory。判断是否存在多条候选方案，应查看候选话题、模块状态和各候选消息，不能把一条消息里的多个点误认为多条路。</p>
+          <pre><code># 查看消息到底是一条点序列，还是存在多个候选话题
+ros2 interface show &lt;Path消息类型&gt;
+ros2 topic list | grep -E 'candidate|reference|path|trajectory'
+ros2 topic info &lt;候选路径话题&gt; --verbose
+ros2 topic echo &lt;候选路径话题&gt; --once</code></pre>
+          <p class="muted">参考：Autoware 的 <a href="https://autowarefoundation.github.io/autoware.universe_planning/pr-5583/planning/scenario_selector/" target="_blank" rel="noreferrer">Scenario Selector 接口说明</a>与 <a href="https://autowarefoundation.github.io/autoware_universe/main/planning/behavior_path_planner/autoware_behavior_path_planner/" target="_blank" rel="noreferrer">Behavior Path Planner</a>。</p>
 
           <h3>候选路径、准备段与最终路径</h3>
           <p>候选路径是场景模块提出、但尚未必被批准为最终输出的方案。以变道为例，调试时应分别记录“首次产生候选”“通过安全检查”“获得批准”“进入横向移动”“取消或完成”的时间，而不是只看车辆是否已经横移。</p>

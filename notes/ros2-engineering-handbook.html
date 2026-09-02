@@ -635,6 +635,45 @@ ros2 topic echo &lt;话题名&gt; --once</code></pre>
             <tr><td>控制</td><td>控制命令</td><td>车辆此刻需要多少转向、驱动力或制动力？</td></tr>
           </tbody></table>
 
+          <h3 id="route-start-goal-pose">起点、终点与 Pose 四元数</h3>
+          <p>规划任务中的起点和终点都不是单独的三维坐标，而是包含位置与朝向的 <code>Pose</code>。手动设置终点后，应优先查看系统实际接受并发布的路线或路由状态消息，而不是只依据 RViz 中的箭头位置判断。</p>
+          <table><thead><tr><th>字段</th><th>含义</th><th>常见误解</th></tr></thead><tbody>
+            <tr><td><code>position.x/y/z</code></td><td>在 <code>header.frame_id</code> 指定坐标系中的位置。</td><td><code>z</code> 是高度，不是航向角。</td></tr>
+            <tr><td><code>orientation.x/y/z/w</code></td><td>描述三维旋转的单位四元数。</td><td><code>w</code> 不是第四个空间坐标；<code>orientation.z</code> 也不等于 yaw。</td></tr>
+            <tr><td><code>start_pose</code></td><td>路线计算使用的起始位姿；具体来源可能是当前定位或接口提交值。</td><td>不能只凭界面标记断定系统采用了哪个起点。</td></tr>
+            <tr><td><code>goal_pose</code></td><td>规划目标的位置和到达朝向。</td><td>只设置位置而忽略方向，可能造成终点附近路径方向不符合预期。</td></tr>
+          </tbody></table>
+
+          <h3>同时查看起点和终点</h3>
+          <pre><code># 先发现当前版本实际使用的路线、目标和位姿话题
+ros2 topic list | grep -E 'route|goal|pose'
+
+# 再确认消息类型和完整字段
+ros2 topic type &lt;路线话题&gt;
+ros2 interface show &lt;路线消息类型&gt;
+ros2 topic info &lt;路线话题&gt; --verbose
+ros2 topic echo &lt;路线话题&gt; --once</code></pre>
+          <ol>
+            <li>先在消息定义中确认是否同时包含 <code>start_pose</code> 与 <code>goal_pose</code>；不同 Autoware 版本和接口可能不同。</li>
+            <li>如果路线消息只提供目标，则分别读取当前定位 Pose 和目标 Pose，并记录同一时刻的数据。</li>
+            <li>比较前必须确认两者的 <code>frame_id</code> 一致；不同坐标系中的数字不能直接相减。</li>
+            <li>路线消息存在不等于路线有效，还应检查路由状态、发布节点和规划输出是否更新。</li>
+          </ol>
+
+          <h3>为什么姿态有 <code>w</code></h3>
+          <p>四元数写作 <code>q = (x, y, z, w)</code>，通常要求归一化，即 <code>x² + y² + z² + w² = 1</code>。对于只绕竖直轴旋转的平面车辆，可用下面的关系理解：</p>
+          <pre><code>x = 0
+y = 0
+z = sin(yaw / 2)
+w = cos(yaw / 2)</code></pre>
+          <ul>
+            <li>无旋转时常写成 <code>(0, 0, 0, 1)</code>；四项全为零不是有效单位四元数。</li>
+            <li><code>q</code> 与 <code>-q</code> 表示相同姿态，因此四个分量不必逐项唯一。</li>
+            <li>如果界面里“没有 <code>w</code>”，先确认当前展开的是 <code>position</code> 还是 <code>orientation</code>，以及面板是否把四元数转换成了 yaw 或折叠了字段。</li>
+            <li>用 <code>ros2 interface show &lt;消息类型&gt;</code> 检查定义，再用 Raw Messages 或 <code>ros2 topic echo</code> 查看原始数据；显示不完整不能直接推断消息没有该字段。</li>
+          </ul>
+          <p class="muted">参考：ROS 2 的 <a href="https://docs.ros.org/en/foxy/Tutorials/Intermediate/Tf2/Quaternion-Fundamentals.html" target="_blank" rel="noreferrer">Quaternion fundamentals</a>与 Autoware Tools 的 <a href="https://autowarefoundation.github.io/autoware_tools/main/planning/autoware_route_client/" target="_blank" rel="noreferrer">Route Client</a>。</p>
+
           <h3>规划子模块如何分工</h3>
           <ul>
             <li><code>mission_planner</code> 负责从起点、目标点和地图生成全局路线，不直接完成局部避障。</li>

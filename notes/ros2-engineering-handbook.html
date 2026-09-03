@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="通用工程技术手册：ROS 2、MCAP、Docker、Autoware、Git/GitHub、SPI、MCP 工具集成、场景仿真与数据精度保护。">
+  <meta name="description" content="通用工程技术手册：ROS 2、MCAP、Docker、Autoware、Git/GitHub、SPI、MCP 工具集成与场景仿真。">
   <meta name="theme-color" content="#14281c">
   <title>ROS 2 与机器人数据工程手册｜Shirley Knowledge</title>
   <style>
@@ -34,7 +34,7 @@
 
     <div class="layout">
       <aside class="toc"><p class="toc-title">手册目录</p><nav>
-        <a href="#ros-graph">01 · ROS 2 图与命令</a><a href="#tf2">02 · TF2</a><a href="#rosbag">03 · rosbag 与 MCAP</a><a href="#mcap-tools">04 · MCAP 工具</a><a href="#mcap-time">05 · 时间与切割</a><a href="#python-cli">06 · Python CLI</a><a href="#docker">07 · Docker 文件流转</a><a href="#links">08 · 路径与软链接</a><a href="#dds">09 · DDS 与 CycloneDDS</a><a href="#middleware">10 · 中间件性能</a><a href="#remote">11 · 远程开发</a><a href="#ai-config">12 · AI 项目配置</a><a href="#autoware-start">13 · Autoware 启动</a><a href="#record-verify">14 · 录制与验证</a><a href="#scenario-package">15 · 场景包与留痕</a><a href="#simulation-consistency">16 · 仿真一致性</a><a href="#excel-long-numbers">17 · Excel 长数字</a><a href="#git-github-workflow">18 · Git 与 GitHub</a><a href="#spi-protocol">19 · SPI 协议</a><a href="#mcp-integration">20 · MCP 工具集成</a><a href="#references">官方参考</a>
+        <a href="#ros-graph">01 · ROS 2 图与命令</a><a href="#tf2">02 · TF2</a><a href="#rosbag">03 · rosbag 与 MCAP</a><a href="#mcap-tools">04 · MCAP 工具</a><a href="#mcap-time">05 · 时间与切割</a><a href="#python-cli">06 · Python CLI</a><a href="#docker">07 · Docker 文件流转</a><a href="#links">08 · 路径与软链接</a><a href="#dds">09 · DDS 与 CycloneDDS</a><a href="#middleware">10 · 中间件性能</a><a href="#remote">11 · 远程开发</a><a href="#ai-config">12 · AI 项目配置</a><a href="#autoware-start">13 · Autoware 启动</a><a href="#record-verify">14 · 录制与验证</a><a href="#scenario-package">15 · 场景包与留痕</a><a href="#simulation-consistency">16 · 仿真一致性</a><a href="#git-github-workflow">17 · Git 与 GitHub</a><a href="#spi-protocol">18 · SPI 协议</a><a href="#mcp-integration">19 · MCP 工具集成</a><a href="#references">官方参考</a>
       </nav></aside>
 
       <article>
@@ -945,43 +945,8 @@ Esc               # 回到普通模式
           <h3>最小对照实验</h3>
           <ul><li><strong>实验 A：</strong>固定速度与回放实车速度对比，只改变纵向输入。</li><li><strong>实验 B：</strong>固定规划输入，比较开环轨迹回放与完整闭环仿真。</li><li><strong>实验 C：</strong>暂时理想化执行器延迟，判断偏差主要来自规划还是控制。</li><li><strong>实验 D：</strong>固定同一障碍物序列和初始状态，逐项恢复感知、预测和动力学差异。</li></ul>
           <div class="note warning"><strong>一次只改一个变量：</strong>同时修改速度、规划阈值和车辆模型，会让结果无法归因。每次实验都应保存输入、配置、关键时间点和输出轨迹。</div>
-        </section>
-
-        <section id="excel-long-numbers">
-          <h2>17｜Excel 长数字、科学计数法与精度</h2>
-          <p class="lead">从网页、日志或数据库复制长编号到 Excel 时，先判断它是“用于计算的数值”还是“必须逐位保真的标识符”。编号、序列号、长时间戳等通常应按文本保存。</p>
-
-          <h3>先区分显示变化与数据变化</h3>
-          <table><thead><tr><th>现象</th><th>含义</th><th>处理方式</th></tr></thead><tbody>
-            <tr><td>显示为 <code>8.98609E+19</code></td><td><code>E+19</code> 表示乘以 10 的 19 次方。常规格式会对很大的数使用科学计数法。</td><td>先查看编辑栏中的实际内容，再判断是否只是显示方式变化。</td></tr>
-            <tr><td>编辑栏仍保留完整且正确的 15 位以内数值</td><td>通常只是单元格宽度或数字格式导致的显示变化。</td><td>加宽列，或按用途改为“数值”等格式。</td></tr>
-            <tr><td>长编号超过 15 位，末尾已经变为 0 或发生变化</td><td>Excel 已把文本式编号当作数值处理，并触发数值精度限制。</td><td>从原始来源重新复制或导入；只修改显示格式无法恢复已丢失的位。</td></tr>
-          </tbody></table>
-
-          <div class="note warning"><strong>关键限制：</strong>Excel 数值最多保留 15 位有效数字。16 位及以上的编号不能依赖数值格式保真，应在写入前设为文本。</div>
-
-          <h3>安全录入长编号</h3>
-          <div class="flow"><div><strong>判断用途</strong><small>需要运算，还是只需逐位保存</small></div><div><strong>预设文本</strong><small>粘贴前把目标列设为“文本”</small></div><div><strong>写入数据</strong><small>单条可在前面输入英文单引号</small></div><div><strong>逐位核对</strong><small>比较长度、首尾字符与原始来源</small></div></div>
-          <ul>
-            <li><strong>批量粘贴：</strong>先选中空列，按 <code>Ctrl+1</code> 打开“设置单元格格式”，选择“文本”，再粘贴。</li>
-            <li><strong>单条输入：</strong>在编号前输入英文单引号，例如 <code>'&lt;长编号&gt;</code>；单引号只用于告诉 Excel 按文本处理。</li>
-            <li><strong>CSV 或外部数据：</strong>使用“数据 → 从文本/CSV”等导入流程，并把编号列的数据类型明确设为文本。不要先让 Excel 自动转换，再尝试补救。</li>
-            <li><strong>导出源头：</strong>若程序生成表格，应把标识符字段定义为字符串，而不是整数或浮点数。</li>
-          </ul>
-
-          <h3>发现异常后的恢复顺序</h3>
-          <ol>
-            <li>不要继续保存覆盖唯一的原始文件，先保留原始网页、CSV、日志或数据库查询结果。</li>
-            <li>在编辑栏中查看实际值，并与原始来源逐位比较；仅看单元格显示不够。</li>
-            <li>如果第 16 位之后已经变化，删除错误列，把空列预设为文本，再从原始来源重新导入。</li>
-            <li>抽查字段长度、前几位和末几位；批量数据可用源系统的字符串长度或校验规则验收。</li>
-          </ol>
-          <div class="note"><strong>不要把格式化当成恢复：</strong>加宽列、改为“数值”或使用 <code>TEXT()</code> 只能改变当前值的显示或类型，不能找回已经被数值转换丢失的原始数字。</div>
-          <p class="muted">依据：Microsoft Support 的“<a href="https://support.microsoft.com/en-US/Excel/display-numbers-in-scientific-exponential-notation" target="_blank" rel="noreferrer">科学计数法显示</a>”“<a href="https://support.microsoft.com/en-US/Excel/format-numbers-as-text" target="_blank" rel="noreferrer">将数字格式设为文本</a>”和“<a href="https://support.microsoft.com/en-US/Excel/keeping-leading-zeros-and-large-numbers" target="_blank" rel="noreferrer">保留前导零与大数</a>”。</p>
-        </section>
-
-        <section id="git-github-workflow">
-          <h2>18｜Git 命令与 GitHub 协作</h2>
+        </section>        <section id="git-github-workflow">
+          <h2>17｜Git 命令与 GitHub 协作</h2>
           <p class="lead">Git 是本地版本控制系统，GitHub 是托管 Git 仓库并提供 Issue、Pull Request、评审和自动化的平台。先理解状态流，再记少量高频命令。</p>
 
           <h3>四个位置与一次完整流转</h3>
@@ -1105,7 +1070,7 @@ git config --global --unset https.proxy</code></pre>
         </section>
 
         <section id="spi-protocol">
-          <h2>19｜SPI 同步串行通信</h2>
+          <h2>18｜SPI 同步串行通信</h2>
           <p class="lead">SPI（Serial Peripheral Interface）是嵌入式系统常用的同步串行总线。控制器产生时钟并选择目标设备，数据通常在 MOSI 与 MISO 上同时移位。</p>
 
           <h3>四根核心信号线</h3>
@@ -1163,7 +1128,7 @@ uint8_t value = rx[1];</code></pre>
 
 
         <section id="mcp-integration">
-          <h2>20｜MCP 工具集成与权限边界</h2>
+          <h2>19｜MCP 工具集成与权限边界</h2>
           <p class="lead">Model Context Protocol（MCP）用统一的客户端—服务器接口，把外部知识、工具和可复用提示接入 AI 应用。它解决的是“如何标准化暴露能力”，不是模型本身。</p>
 
           <h3>角色与能力</h3>
@@ -1256,8 +1221,6 @@ uint8_t value = rx[1];</code></pre>
             <li><a href="https://docs.docker.com/reference/cli/docker/container/cp/" target="_blank" rel="noreferrer">Docker 官方：docker cp</a></li>
             <li><a href="https://cyclonedds.io/docs/cyclonedds/latest/config/" target="_blank" rel="noreferrer">CycloneDDS 官方配置指南</a></li>
             <li><a href="https://apollo.baidu.com/docs/apollo/latest/" target="_blank" rel="noreferrer">Apollo 官方文档</a></li>
-            <li><a href="https://support.microsoft.com/en-US/Excel/display-numbers-in-scientific-exponential-notation" target="_blank" rel="noreferrer">Microsoft Support：科学计数法显示</a></li>
-            <li><a href="https://support.microsoft.com/en-US/Excel/format-numbers-as-text" target="_blank" rel="noreferrer">Microsoft Support：将数字格式设为文本</a></li>
             <li><a href="https://git-scm.com/docs" target="_blank" rel="noreferrer">Git 官方参考</a></li>
             <li><a href="https://docs.github.com/en/pull-requests/get-started/pull-request-quickstart" target="_blank" rel="noreferrer">GitHub Docs：Pull Request 快速入门</a></li>
             <li><a href="https://docs.github.com/en/account-and-profile/concepts/username-changes" target="_blank" rel="noreferrer">GitHub Docs：用户名变更</a></li>

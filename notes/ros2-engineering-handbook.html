@@ -484,6 +484,35 @@ find launch config src include test -maxdepth 2 -type f 2&gt;/dev/null | sort</c
           <p><strong>推荐阅读顺序：</strong>先看 README 和官方文档建立功能模型，再看 <code>package.xml</code> 与 <code>launch/config</code> 确认运行边界，之后沿输入输出进入 <code>include/src</code>，最后用测试和变更记录校验理解。</p>
 
 
+
+          <h3 id="cpp-compile-vector-basics">C++ 编译、输出与 vector 基础</h3>
+          <p>最小的 C++ 学习闭环是“保存源文件 → 编译 → 运行 → 修改后重新编译”。编译器读取的是磁盘上的文件；如果编辑器仍显示未保存标记，直接编译可能运行旧代码。</p>
+          <pre><code># 把源文件编译成指定名称的可执行文件
+g++ &lt;源文件.cpp&gt; -o &lt;可执行文件&gt;
+
+# 运行当前目录中的可执行文件
+./&lt;可执行文件&gt;</code></pre>
+          <table><thead><tr><th>写法</th><th>含义</th><th>容易混淆的点</th></tr></thead><tbody>
+            <tr><td><code>std::cout &lt;&lt; value</code></td><td>把 <code>value</code> 送入标准输出流。</td><td>这里的 <code>&lt;&lt;</code> 是流插入运算符，不是“赋值箭头”。</td></tr>
+            <tr><td><code>std::endl</code></td><td>换行并刷新输出缓冲区。</td><td>普通逐行输出通常也可使用 <code>'\n'</code>。</td></tr>
+            <tr><td><code>std::vector&lt;double&gt;</code></td><td>保存多个同类型元素、长度可增长的顺序容器。</td><td>元素下标从 <code>0</code> 开始，类型写在尖括号中。</td></tr>
+            <tr><td><code>speeds.push_back(9.0)</code></td><td>把一个新元素追加到容器末尾。</td><td>它不会覆盖 <code>speeds[0]</code>；首项仍使用下标 <code>0</code>。</td></tr>
+          </tbody></table>
+          <pre><code>#include &lt;iostream&gt;
+#include &lt;vector&gt;
+
+int main()
+{
+  double vehicle_speed = 8.2;
+  std::vector&lt;double&gt; speeds{7.5, 8.0};
+
+  speeds.push_back(9.0);
+
+  std::cout &lt;&lt; "current: " &lt;&lt; vehicle_speed &lt;&lt; " m/s" &lt;&lt; '\n';
+  std::cout &lt;&lt; "first sample: " &lt;&lt; speeds[0] &lt;&lt; '\n';
+}</code></pre>
+          <div class="note"><strong>数字可以直接写，但变量更适合工程代码：</strong><code>std::cout &lt;&lt; 8.2</code> 在语法上没有问题；使用 <code>vehicle_speed</code> 是为了表达含义、统一类型、重复使用和集中修改。直接散落在代码中的数字通常难以维护。</div>
+
           <h3 id="ros2-cpp-node-source-reading">从构造函数读懂 ROS 2 C++ 节点</h3>
           <p>第一次读 Autoware C++ 源码时，不需要先掌握整门 C++。可以从节点构造函数入手，因为它通常集中展示依赖对象、车辆参数、ROS 参数、Publisher、Subscription、Timer 和 Callback，是建立运行模型最快的位置。</p>
           <pre><code>// 通用化示例：名称和话题均为占位形式
@@ -941,6 +970,17 @@ Esc               # 回到普通模式
           <h3>推荐诊断顺序</h3>
           <div class="flow"><div><strong>统一时间轴</strong><small>对齐起点、时钟和关键事件</small></div><div><strong>统一初始状态</strong><small>位置、航向、速度和车道</small></div><div><strong>比较状态机</strong><small>何时申请、拒绝、批准或取消</small></div><div><strong>隔离动力学</strong><small>再检查控制延迟和车辆模型</small></div></div>
           <ol><li>选取同一个关键事件作为零时刻，不只按视频画面或文件起点对齐。</li><li>叠加比较速度、加速度、航向角、yaw rate 和横向偏移。</li><li>记录规划器第一次产生变道候选、第一次拒绝和最终批准的时间及原因。</li><li>核对同一时刻的障碍物、预测轨迹、间隙和安全阈值。</li><li>最后再调整转向延迟、执行器响应、加减速度限制和车辆参数。</li></ol>
+
+
+          <h3 id="failcase-reproduction-boundary">Failcase 未复现时的结论边界</h3>
+          <p>仿真在变道前的轨迹、姿态或趋势与实车相似，只能说明前置状态接近；如果实车最终变道失败，而仿真车辆变道成功，目标异常仍然属于“未复现”。</p>
+          <table><thead><tr><th>验证层级</th><th>可以确认什么</th><th>不能据此确认什么</th></tr></thead><tbody>
+            <tr><td>前段轨迹相似</td><td>初始位置、局部轨迹或运动趋势较接近。</td><td>不能证明后续状态机和控制响应一致。</td></tr>
+            <tr><td>出现变道趋势</td><td>系统可能已产生请求、候选路径或转向趋势。</td><td>不能证明异常分支已经触发。</td></tr>
+            <tr><td>最终结果一致</td><td>双方都进入相同的失败、取消或异常停车过程。</td><td>仍需继续确认导致该结果的最早原因。</td></tr>
+          </tbody></table>
+          <p>记录未复现结果时，应分别写明：已经相似的阶段、开始分叉的关键时刻、仿真与实车的最终结果，以及仍待验证的感知、规划、控制或车辆状态。原因尚不明确时，应明确写“根因待确认”，不能从最终现象反推唯一原因。</p>
+          <div class="note warning"><strong>验收口径：</strong>“有变道趋势”不是“变道失败已复现”；“仿真运行成功”也不是“目标 failcase 复现成功”。</div>
 
           <h3>最小对照实验</h3>
           <ul><li><strong>实验 A：</strong>固定速度与回放实车速度对比，只改变纵向输入。</li><li><strong>实验 B：</strong>固定规划输入，比较开环轨迹回放与完整闭环仿真。</li><li><strong>实验 C：</strong>暂时理想化执行器延迟，判断偏差主要来自规划还是控制。</li><li><strong>实验 D：</strong>固定同一障碍物序列和初始状态，逐项恢复感知、预测和动力学差异。</li></ul>

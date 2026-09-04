@@ -492,6 +492,12 @@ g++ &lt;源文件.cpp&gt; -o &lt;可执行文件&gt;
 
 # 运行当前目录中的可执行文件
 ./&lt;可执行文件&gt;</code></pre>
+          <p><strong>Ubuntu 与 Windows 的核心流程相同：</strong>都是“保存源文件 → 调用编译器 → 运行可执行文件”，但终端语法和编译器环境可能不同。</p>
+          <table><thead><tr><th>环境</th><th>编译</th><th>运行</th></tr></thead><tbody>
+            <tr><td>Ubuntu / Linux（g++）</td><td><code>g++ &lt;源文件.cpp&gt; -o &lt;程序名&gt;</code></td><td><code>./&lt;程序名&gt;</code></td></tr>
+            <tr><td>Windows PowerShell（已安装 g++）</td><td><code>g++ &lt;源文件.cpp&gt; -o &lt;程序名&gt;.exe</code></td><td><code>.\&lt;程序名&gt;.exe</code></td></tr>
+          </tbody></table>
+          <div class="note">Windows 若使用 MSVC，编译命令会改为 <code>cl</code>；若使用 MinGW/MSYS2，则可继续使用 <code>g++</code>。源代码概念通常不变，先确认编译器已安装并能在当前终端中调用。</div>
           <table><thead><tr><th>写法</th><th>含义</th><th>容易混淆的点</th></tr></thead><tbody>
             <tr><td><code>std::cout &lt;&lt; value</code></td><td>把 <code>value</code> 送入标准输出流。</td><td>这里的 <code>&lt;&lt;</code> 是流插入运算符，不是“赋值箭头”。</td></tr>
             <tr><td><code>std::endl</code></td><td>换行并刷新输出缓冲区。</td><td>普通逐行输出通常也可使用 <code>'\n'</code>。</td></tr>
@@ -512,6 +518,80 @@ int main()
   std::cout &lt;&lt; "first sample: " &lt;&lt; speeds[0] &lt;&lt; '\n';
 }</code></pre>
           <div class="note"><strong>数字可以直接写，但变量更适合工程代码：</strong><code>std::cout &lt;&lt; 8.2</code> 在语法上没有问题；使用 <code>vehicle_speed</code> 是为了表达含义、统一类型、重复使用和集中修改。直接散落在代码中的数字通常难以维护。</div>
+
+          <h3 id="cpp-class-pointer-callback">类、对象、shared_ptr 与回调参数</h3>
+          <p>类把“需要保存的状态”和“围绕状态执行的操作”组织在一起。下面的限速检查示例展示了类、构造函数、访问权限、对象、成员函数和条件分支之间的关系。</p>
+          <pre><code>#include &lt;iostream&gt;
+
+// 定义一个“速度检查器”类型
+class VelocityChecker
+{
+public:
+  // 构造函数：创建对象时接收并保存限速值
+  VelocityChecker(double limit)
+  {
+    speed_limit_ = limit;
+  }
+
+  // 公有方法：外部代码可以调用它检查是否超速
+  bool isOverSpeed(double speed)
+  {
+    return speed &gt; speed_limit_;
+  }
+
+private:
+  // 私有成员：只允许类内部直接访问
+  double speed_limit_;
+};
+
+int main()
+{
+  // 创建对象；8.0 会传给构造函数
+  VelocityChecker checker(8.0);
+  double current_speed = 9.5;
+
+  // 方法返回 bool，可直接作为 if 的判断条件
+  if (checker.isOverSpeed(current_speed)) {
+    std::cout &lt;&lt; "over speed" &lt;&lt; '\n';
+  } else {
+    std::cout &lt;&lt; "normal" &lt;&lt; '\n';
+  }
+
+  return 0;
+}</code></pre>
+          <table><thead><tr><th>写法</th><th>含义</th></tr></thead><tbody>
+            <tr><td><code>class VelocityChecker</code></td><td>定义一个可复用的自定义类型。</td></tr>
+            <tr><td><code>VelocityChecker(double limit)</code></td><td>构造函数与类同名、没有返回类型，在创建对象时自动执行。</td></tr>
+            <tr><td><code>public</code> / <code>private</code></td><td>分别表示允许类外调用的接口和仅由类内部维护的实现细节。</td></tr>
+            <tr><td><code>VelocityChecker checker(8.0)</code></td><td>创建对象 <code>checker</code>，并用 <code>8.0</code> 初始化它。</td></tr>
+            <tr><td><code>checker.isOverSpeed(...)</code></td><td>通过对象和点号调用成员函数。</td></tr>
+            <tr><td><code>bool</code></td><td>表示真或假，适合直接驱动 <code>if/else</code> 分支。</td></tr>
+          </tbody></table>
+          <p><strong>推荐书写顺序：</strong>先明确类的职责，再确定需要保存的成员变量；然后用构造函数完成初始化，用公有方法表达规则，最后在 <code>main()</code> 中创建对象并覆盖真、假两个分支。成员名末尾的下划线只是常见命名约定，不是 C++ 语法要求。</p>
+
+          <p>ROS 2 回调中经常通过智能指针接收消息。下面的通用示例说明类型、参数和成员访问的关系：</p>
+          <pre><code>#include &lt;iostream&gt;
+#include &lt;memory&gt;
+
+struct VehicleMessage
+{
+  double speed;
+};
+
+// void 表示函数不返回结果
+// std::shared_ptr&lt;VehicleMessage&gt; 是参数 msg 的完整类型
+void speedCallback(std::shared_ptr&lt;VehicleMessage&gt; msg)
+{
+  // msg 是指针式对象，使用 -&gt; 访问消息成员
+  std::cout &lt;&lt; msg-&gt;speed &lt;&lt; '\n';
+}</code></pre>
+          <table><thead><tr><th>写法</th><th>含义</th><th>判断方法</th></tr></thead><tbody>
+            <tr><td><code>std::shared_ptr&lt;VehicleMessage&gt;</code></td><td>共同管理一个 <code>VehicleMessage</code> 对象生命周期的智能指针类型。</td><td><code>shared_ptr</code> 定义在标准库命名空间中，所以要写 <code>std::</code>。</td></tr>
+            <tr><td><code>msg</code></td><td>函数参数名，回调执行时接收具体消息。</td><td>括号中的参数同样必须写完整类型；位置在函数内部或括号内不改变 <code>std::</code> 的含义。</td></tr>
+            <tr><td><code>msg-&gt;speed</code></td><td>通过指针访问消息成员。</td><td>等价于 <code>(*msg).speed</code>。</td></tr>
+            <tr><td><code>checker.isOverSpeed(...)</code></td><td>通过普通对象访问成员。</td><td>普通对象常用点号，指针或智能指针常用箭头。</td></tr>
+          </tbody></table>
+          <div class="note"><strong>阅读回调签名时先拆成四部分：</strong>返回类型、函数名、参数类型、参数名。例如 <code>void speedCallback(std::shared_ptr&lt;VehicleMessage&gt; msg)</code> 中，返回类型是 <code>void</code>，函数名是 <code>speedCallback</code>，参数类型是 <code>std::shared_ptr&lt;VehicleMessage&gt;</code>，参数名是 <code>msg</code>。</div>
 
           <h3 id="ros2-cpp-node-source-reading">从构造函数读懂 ROS 2 C++ 节点</h3>
           <p>第一次读 Autoware C++ 源码时，不需要先掌握整门 C++。可以从节点构造函数入手，因为它通常集中展示依赖对象、车辆参数、ROS 参数、Publisher、Subscription、Timer 和 Callback，是建立运行模型最快的位置。</p>

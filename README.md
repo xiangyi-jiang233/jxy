@@ -16,7 +16,7 @@
 - Python 命令行工具设计
 - Docker 文件流转与 Linux 软链接
 - DDS、RMW、CycloneDDS、QoS 兼容性与分层排障
-- Autoware 七层架构、Sensing/Localization/Perception 边界、Odometry、起终点 Pose 与四元数、Trajectory/Control、规划主数据流、Scenario Selector 职责、PredictedObjects、协方差、规划子模块、C++ 编译运行与 vector 基础、ROS 2 C++ 节点源码阅读、Behavior Path Planner、vcstool 与 colcon 编译
+- Autoware 七层架构、Sensing/Localization/Perception 边界、Odometry、起终点 Pose 与四元数、Trajectory/Control、规划主数据流、Scenario Selector 职责、PredictedObjects、协方差、规划子模块、C++ 编译运行、vector、类、对象与 shared_ptr、ROS 2 C++ 节点源码阅读、Behavior Path Planner、vcstool 与 colcon 编译
 - ROS 2 选择性录制与结果验收
 - 场景包制作、MCAP 额外话题配置、感知/规划异常分类、重跑验证与可复现留痕
 - 实车回放、闭环仿真一致性与 failcase 复现结论边界

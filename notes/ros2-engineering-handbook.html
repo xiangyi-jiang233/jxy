@@ -379,12 +379,48 @@ curl -O "http://&lt;IP地址&gt;:&lt;端口&gt;/&lt;文件名&gt;"</code></pre>
         </section>
 
         <section id="ai-config">
-          <h2>12｜AI 编程助手的项目配置</h2>
-          <p class="lead">项目指令文件的目标，是让 AI 理解稳定的工程约束，而不是记录临时聊天或个人机器信息。</p>
-          <div class="grid"><div class="mini"><h3>适合写入</h3><p>项目目标、目录结构、语言版本、代码风格、测试命令、不可破坏的接口与审查要求。</p></div><div class="mini"><h3>不应写入</h3><p>密码、Token、密钥、内网 IP、真实数据、个人目录、临时故障和未公开资料。</p></div></div>
+          <h2>12｜AI 编程助手与 LLM 应用接入</h2>
+          <p class="lead">项目指令文件用于表达稳定的工程约束；LLM 应用开发则是在现成模型外构建界面、上下文、工具和业务逻辑。二者都不等于从头训练大模型。</p>
+          <div class="grid"><div class="mini"><h3>适合写入项目指令</h3><p>项目目标、目录结构、语言版本、代码风格、测试命令、不可破坏的接口与审查要求。</p></div><div class="mini"><h3>不应写入</h3><p>密码、Token、密钥、内网 IP、真实数据、个人目录、临时故障和未公开资料。</p></div></div>
           <h3>第一性原理式描述</h3>
           <ol><li><strong>目标：</strong>最终要实现什么可验证结果？</li><li><strong>事实：</strong>哪些输入、接口和环境是确定的？</li><li><strong>约束：</strong>哪些行为禁止，哪些格式必须保留？</li><li><strong>最小步骤：</strong>怎样用最少假设验证核心链路？</li><li><strong>验收：</strong>用什么测试或输出判断完成？</li></ol>
           <div class="note warning"><strong>安全边界：</strong>公开仓库中的配置文件同样是公开内容。任何凭据都应放入受保护的 Secret 或本地环境变量，不能提交到 Git。</div>
+
+          <h3 id="llm-app-integration">LLM 应用开发、模型接入与训练边界</h3>
+          <p>桌面助手、聊天机器人或电子宠物通常不需要自己训练基础大模型。常见做法是调用已经训练好的模型，再由应用层负责界面、角色设定、会话状态、工具调用、数据保存和错误处理。</p>
+          <div class="flow"><div><strong>客户端界面</strong><small>接收输入并展示回复</small></div><div><strong>应用逻辑</strong><small>组织提示词、状态和工具</small></div><div><strong>模型 API</strong><small>发送请求并获得生成结果</small></div><div><strong>验收与监控</strong><small>检查效果、错误、延迟和费用</small></div></div>
+
+          <table><thead><tr><th>概念</th><th>它解决什么</th><th>不代表什么</th></tr></thead><tbody>
+            <tr><td>ChatGPT 订阅</td><td>获得 ChatGPT 网页或官方应用中的相应功能与使用额度。</td><td>不自动包含第三方应用调用模型所需的 API 用量。</td></tr>
+            <tr><td>模型 API</td><td>让自己的程序通过请求调用模型；需要单独的凭据、计费和用量控制。</td><td>不是把 ChatGPT 登录状态直接交给桌面程序。</td></tr>
+            <tr><td>角色提示词</td><td>约束语气、称呼、回复长度、主动行为和禁用风格。</td><td>通常只是在运行时给模型指令，不会修改模型权重，也不等于训练。</td></tr>
+            <tr><td>检索与工具</td><td>让模型读取外部资料或执行受控动作，补足仅靠提示词无法完成的任务。</td><td>不能替代权限控制、结果验证和敏感信息保护。</td></tr>
+            <tr><td>微调</td><td>在有稳定数据集和可量化目标时，使模型更稳定地遵循特定输出模式。</td><td>不是开发第一个原型的必需步骤，更不是从零训练基础模型。</td></tr>
+          </tbody></table>
+
+          <h3>从原型到训练的选择顺序</h3>
+          <ol>
+            <li>先用现成模型和最小提示词验证核心交互。</li>
+            <li>需要记忆或项目知识时，再加入会话状态、检索或受控工具。</li>
+            <li>用固定测试集评估正确率、角色稳定性、延迟和费用。</li>
+            <li>只有当提示词和检索仍不能稳定满足可量化目标时，才评估微调。</li>
+            <li>从头训练基础模型需要大量数据、算力和工程团队，通常不适合普通应用项目。</li>
+          </ol>
+
+          <h3>桌面客户端的安全接入</h3>
+          <pre><code># 个人原型：从本地环境变量读取，不把真实密钥写进代码或 Git
+MODEL_API_KEY=&lt;模型服务密钥&gt;
+
+# 发布给他人使用的客户端
+桌面客户端 → 自己的后端服务 → 模型服务 API</code></pre>
+          <ul>
+            <li>不要把 API Key 硬编码在源码、配置示例、安装包或公开仓库中。</li>
+            <li>个人原型可从本地环境变量读取；分发给用户的应用应通过自己的后端转发请求。</li>
+            <li>后端应限制模型、请求频率、单次输入长度和费用，并设置超时与有限重试。</li>
+            <li>日志记录请求 ID、耗时和错误类型即可；不要记录密钥、完整私人对话或内部数据。</li>
+            <li>先完成“输入 → 模型回复 → 界面展示”的最小闭环，再增加长期记忆、主动提醒和工具调用。</li>
+          </ul>
+          <p class="muted">参考：OpenAI 的 <a href="https://help.openai.com/en/articles/9039756-managing-billing-for-chatgpt-and-the-api-platform" target="_blank" rel="noreferrer">ChatGPT 与 API 独立计费说明</a>、<a href="https://help.openai.com/en/articles/5112595-best-practices-for-api-key-safety" target="_blank" rel="noreferrer">API Key 安全实践</a>与 <a href="https://developers.openai.com/api/docs/quickstart" target="_blank" rel="noreferrer">API 开发快速入门</a>。</p>
         </section>
 
         <section id="autoware-start">

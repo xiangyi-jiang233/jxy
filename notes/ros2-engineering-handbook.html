@@ -674,6 +674,50 @@ ExampleNode::ExampleNode(const rclcpp::NodeOptions &amp; options)
             <tr><td><code>1</code></td><td>这里通常表示 QoS 队列深度。</td><td>它不是发布频率，也不表示只发布一次。</td></tr>
           </tbody></table>
 
+          <h3 id="velocity-smoother-callback-reading">从轨迹回调读执行链与 guard</h3>
+          <p>进入规划节点回调后，先不要跳进算法细节。应按“函数签名 → 调试计时 → 保存主输入 → 读取辅助输入 → 空值与 guard 校验 → 核心处理 → 发布结果”的顺序建立执行链。</p>
+          <pre><code>// 通用化示例：类型和成员名不对应任何内部项目
+void ExampleNode::onTrajectory(const Trajectory::ConstSharedPtr msg)
+{
+  // 进入作用域时开始计时，离开函数时自动完成记录
+  ScopedTimeTrack time_track(__func__, *time_keeper_);
+
+  RCLCPP_DEBUG(get_logger(), "&lt;回调开始&gt;");
+  stop_watch_.tic();
+  diagnostics_-&gt;clear();
+
+  // 保存触发本次回调的主输入
+  raw_trajectory_ = msg;
+
+  // 从辅助订阅器或缓存中取得当前可用状态
+  const auto odometry_ptr = odometry_subscriber_.take_data();
+  const auto operation_mode_ptr = operation_mode_subscriber_.take_data();
+
+  // 指针有效时才解引用并更新状态
+  if (operation_mode_ptr) {
+    operation_mode_ = *operation_mode_ptr;
+  }
+
+  // guard：必要输入不足时提前结束，避免空指针和无效计算
+  if (!raw_trajectory_ || !odometry_ptr) {
+    return;
+  }
+
+  // 后续才进入数据转换、平滑算法和 publish
+}</code></pre>
+          <table><thead><tr><th>源码形式</th><th>通用含义</th><th>继续确认什么</th></tr></thead><tbody>
+            <tr><td><code>ExampleNode::onTrajectory</code></td><td><code>::</code> 表示这是 <code>ExampleNode</code> 类的成员函数在类外的定义。</td><td>回到头文件确认声明，再从订阅创建处确认谁绑定了它。</td></tr>
+            <tr><td><code>Trajectory::ConstSharedPtr</code></td><td>通常是指向只读消息的共享智能指针别名。</td><td>以当前消息类型生成的别名或源码定义为准；不要仅凭名称猜底层类型。</td></tr>
+            <tr><td><code>const ... msg</code></td><td>参数按值传入时，前置 <code>const</code> 还限制函数内重新绑定这份局部指针。</td><td>区分“指针本身不可改”和“指向的消息不可改”。</td></tr>
+            <tr><td><code>ScopedTimeTrack(...)</code></td><td>作用域计时对象通常利用 RAII，在创建和析构之间统计本次回调耗时。</td><td>查看构造函数、析构函数以及结果发布到哪里。</td></tr>
+            <tr><td><code>__func__</code></td><td>C++ 提供的当前函数名标识，可用于日志和性能统计。</td><td>它只提供函数名，不代表调用者或话题名。</td></tr>
+            <tr><td><code>take_data()</code></td><td>从订阅包装器或缓存取得当前数据。</td><td>必须跳转到具体类型确认它取最新值、是否消费数据、无数据时返回什么。</td></tr>
+            <tr><td><code>if (ptr)</code></td><td>先判断智能指针是否有效。</td><td>只有非空时才能安全执行 <code>*ptr</code> 或 <code>ptr-&gt;field</code>。</td></tr>
+            <tr><td><code>guard</code> / <code>return</code></td><td>在必要条件不满足时提前退出，保护后续算法。</td><td>逐项记录缺少哪个输入会退出，以及是否产生诊断或日志。</td></tr>
+          </tbody></table>
+          <div class="note"><strong>回调定义写在文件后面仍然可以执行：</strong>只要编译器在绑定或调用前已经从类声明或函数声明中知道它的签名，函数实现可以出现在后面的源码位置。运行时并不是按文件从上到下自动执行；订阅收到消息后，由 ROS 2 Executor 调度已绑定的回调。</div>
+          <div class="note warning"><strong>不要把准备工作当成核心算法：</strong>日志、计时、清理诊断、保存输入和 guard 主要负责可观测性与安全边界。继续向下找到数据转换、平滑器调用和 <code>publish()</code>，才能说明该节点实际怎样改变轨迹。</div>
+
           <h3>用 Linux 命令建立源码调用链</h3>
           <pre><code># 目的 1：找到节点的 ROS 接口和参数
 rg -n 'create_(publisher|subscription)|declare_parameter|create_wall_timer' &lt;包目录&gt;

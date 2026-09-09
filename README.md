@@ -8,7 +8,7 @@
 
 ## 当前内容
 
-- ROS 2 与机器人数据工程手册（19 个通用主题）
+- ROS 2 与机器人数据工程手册（20 个通用主题）
 - Autoware 官方架构图复习页（七层总体架构、Universe 节点总图、Planning 高层架构、10 分制学习进度）
 - 《自动驾驶系统开发》12 周阅读与自检系统
 - ROS 2 节点、话题、时间戳、TF2、rosbag 与 Foxglove 数据观察
@@ -23,6 +23,7 @@
 - Git 命令、远端测试分支切换、fetch/pull 区分、多仓库更新排障、GitHub Pages 重部署与代理排障
 - SPI 信号线、时钟模式、代码结构与通信排查
 - MCP 架构、远程/本地服务器、频率限制与权限边界
+- Apollo 风格规划框架中的 HMI、外部指令、Init、Scenario/Stage/Task 与 jerk
 - 代理开启时访问内网服务的直连方法
 - 通信中间件性能分析方法
 - 远程环境识别、Windows OpenSSH Server、SSH/SCP、临时 HTTP 文件传输与虚拟组网排障

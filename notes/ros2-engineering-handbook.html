@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="通用工程技术手册：ROS 2、MCAP、Docker、Autoware、Git/GitHub、SPI、MCP 工具集成与场景仿真。">
+  <meta name="description" content="通用工程技术手册：ROS 2、MCAP、Docker、Autoware、Apollo 规划框架、Git/GitHub、SPI、MCP 工具集成与场景仿真。">
   <meta name="theme-color" content="#14281c">
   <title>ROS 2 与机器人数据工程手册｜Shirley Knowledge</title>
   <style>
@@ -34,7 +34,7 @@
 
     <div class="layout">
       <aside class="toc"><p class="toc-title">手册目录</p><nav>
-        <a href="#ros-graph">01 · ROS 2 图与命令</a><a href="#tf2">02 · TF2</a><a href="#rosbag">03 · rosbag 与 MCAP</a><a href="#mcap-tools">04 · MCAP 工具</a><a href="#mcap-time">05 · 时间与切割</a><a href="#python-cli">06 · Python CLI</a><a href="#docker">07 · Docker 文件流转</a><a href="#links">08 · 路径与软链接</a><a href="#dds">09 · DDS 与 CycloneDDS</a><a href="#middleware">10 · 中间件性能</a><a href="#remote">11 · 远程开发</a><a href="#ai-config">12 · AI 项目配置</a><a href="#autoware-start">13 · Autoware 启动</a><a href="#record-verify">14 · 录制与验证</a><a href="#scenario-package">15 · 场景包与留痕</a><a href="#simulation-consistency">16 · 仿真一致性</a><a href="#git-github-workflow">17 · Git 与 GitHub</a><a href="#spi-protocol">18 · SPI 协议</a><a href="#mcp-integration">19 · MCP 工具集成</a><a href="#references">官方参考</a>
+        <a href="#ros-graph">01 · ROS 2 图与命令</a><a href="#tf2">02 · TF2</a><a href="#rosbag">03 · rosbag 与 MCAP</a><a href="#mcap-tools">04 · MCAP 工具</a><a href="#mcap-time">05 · 时间与切割</a><a href="#python-cli">06 · Python CLI</a><a href="#docker">07 · Docker 文件流转</a><a href="#links">08 · 路径与软链接</a><a href="#dds">09 · DDS 与 CycloneDDS</a><a href="#middleware">10 · 中间件性能</a><a href="#remote">11 · 远程开发</a><a href="#ai-config">12 · AI 项目配置</a><a href="#autoware-start">13 · Autoware 启动</a><a href="#record-verify">14 · 录制与验证</a><a href="#scenario-package">15 · 场景包与留痕</a><a href="#simulation-consistency">16 · 仿真一致性</a><a href="#git-github-workflow">17 · Git 与 GitHub</a><a href="#spi-protocol">18 · SPI 协议</a><a href="#mcp-integration">19 · MCP 工具集成</a><a href="#planning-framework">20 · 规划框架层级</a><a href="#references">官方参考</a>
       </nav></aside>
 
       <article>
@@ -1393,6 +1393,52 @@ uint8_t value = rx[1];</code></pre>
             <li>烧录后读取项目状态或串口输出进行验证，不能只依据“工具调用成功”。</li>
           </ul>
           <p class="muted">参考：<a href="https://modelcontextprotocol.io/docs/learn/architecture" target="_blank" rel="noreferrer">MCP 官方架构说明</a>、<a href="https://mcp.espressif.com/" target="_blank" rel="noreferrer">乐鑫 MCP Servers</a>与 <a href="https://docs.espressif.com/projects/esp-idf/en/release-v6.0/esp32/api-guides/tools/idf-py.html" target="_blank" rel="noreferrer">ESP-IDF Tools 本地 MCP Server</a>。</p>
+        </section>
+
+        <section id="planning-framework">
+          <h2>20｜规划系统入口、场景与任务层级</h2>
+          <p class="lead">以 Apollo 风格的 Planning 架构图为例，先区分“谁下达任务、谁选择场景、谁执行具体算法”，再阅读模块和函数。这里描述的是通用分层思路，不能直接套用为 Autoware 的模块名称。</p>
+
+          <h3>HMI 与外部指令入口</h3>
+          <table><thead><tr><th>组件</th><th>职责</th><th>不负责什么</th></tr></thead><tbody>
+            <tr><td>HMI</td><td>Human–Machine Interface，人机交互界面。让操作员选择任务、设置目标并查看系统状态。</td><td>通常不直接计算路径或控制量。</td></tr>
+            <tr><td>External Command</td><td>接收并规范化界面或外部系统给出的任务指令，再交给规划模块。</td><td>不是轨迹优化器，也不代替规划决策。</td></tr>
+            <tr><td>外部程序、测试工具或自动化脚本</td><td>无需人工点击界面即可发送标准规划命令，适合批量测试、回归验证和系统集成。</td><td>不能绕过指令校验、权限和安全状态检查。</td></tr>
+          </tbody></table>
+          <div class="note"><strong>为什么图中有两个外部指令入口：</strong>它们表示不同的命令来源可以汇入同一规划命令接口，并不表示每次运行都必须同时输入两份指令。实际系统应定义优先级、冲突处理和有效期，避免旧命令或多源命令互相覆盖。</div>
+
+          <h3><code>Init</code> 与循环规划</h3>
+          <table><thead><tr><th>阶段</th><th>典型动作</th><th>执行特点</th></tr></thead><tbody>
+            <tr><td><code>Init</code></td><td>加载配置、创建对象、建立通信接口、准备算法和共享资源。</td><td>通常在模块启动或规划器切换时执行，而不是每帧重复做全部初始化。</td></tr>
+            <tr><td><code>RunOnce</code> / <code>Plan</code></td><td>读取本周期输入，执行规则、场景和优化算法，生成新的规划结果。</td><td>按数据到达或固定周期重复运行。</td></tr>
+          </tbody></table>
+          <p>源码中函数定义写在调用位置之后仍可生效，只要编译器在调用前已经见到声明；运行顺序由调用关系和调度机制决定，不由源文件上下位置决定。</p>
+
+          <h3>从输入到规划输出</h3>
+          <div class="flow"><div><strong>接收状态</strong><small>地图、感知、预测、定位、车辆状态与外部命令</small></div><div><strong>生成参考线</strong><small>为道路结构和可行驶方向提供基准</small></div><div><strong>规则与场景</strong><small>应用交通规则并选择当前驾驶场景</small></div><div><strong>任务与优化</strong><small>生成路径和速度，发布给控制模块</small></div></div>
+          <ul>
+            <li><strong>Reference Line Provider：</strong>维护或生成参考线，为后续路径、交通规则和场景规划提供道路几何基准。</li>
+            <li><strong>Traffic Rule：</strong>把红绿灯、停止线等规则转化为规划约束。</li>
+            <li><strong>Scenario Manager：</strong>根据道路、环境和任务状态选择或更新当前场景。</li>
+            <li><strong>Control：</strong>接收规划轨迹并计算转向、加速或制动指令；它不是 Planning 内部的路径选择器。</li>
+          </ul>
+
+          <h3>Scenario、Stage 与 Task</h3>
+          <table><thead><tr><th>层级</th><th>含义</th><th>示例</th></tr></thead><tbody>
+            <tr><td>Scenario</td><td>一类完整驾驶情境，决定采用哪套处理流程。</td><td>车道跟随、受保护交通灯、停车等。</td></tr>
+            <tr><td>Stage</td><td>场景内部按状态推进的阶段。</td><td>接近路口、等待、通过或完成。</td></tr>
+            <tr><td>Task</td><td>阶段中执行的具体算法步骤。</td><td>车道跟随路径、借道路径、速度边界、速度决策和速度优化。</td></tr>
+          </tbody></table>
+          <pre><code>Scenario（驾驶场景）
+  └─ Stage（场景阶段）
+       └─ Task（具体算法任务）</code></pre>
+          <div class="note"><strong>读图方法：</strong>图中的省略号表示还存在其他场景、阶段或任务，不能据此把示例列表当成完整清单。具体有哪些类型，应以当前版本的配置与源码注册表为准。</div>
+
+          <h3>Jerk 为什么影响轨迹舒适性</h3>
+          <p><code>jerk</code> 是加速度对时间的变化率，单位为 <code>m/s³</code>：</p>
+          <pre><code>jerk = Δ加速度 / Δ时间</code></pre>
+          <p>加速度突然从较小值跳到较大值时，即使速度连续，乘员仍会感到明显顿挫。速度优化器会限制或惩罚过大的 jerk，在安全、效率和舒适性之间求平衡。<code>PiecewiseJerkSpeedOptimizer</code> 这类名称表示把速度过程分段建模，并把加速度变化纳入优化；它优化的是速度曲线，不是单独选择道路。</p>
+          <p class="muted">参考：<a href="https://apollo.baidu.com/docs/apollo/latest/" target="_blank" rel="noreferrer">Apollo 官方文档</a>。模块名和处理顺序可能随版本变化，阅读时以当前源码和配置为准。</p>
         </section>
 
         <section id="references" class="refs">
